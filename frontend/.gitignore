@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+
+# Build and test output
+dist
+coverage
+*.tsbuildinfo
+
+# Local environment: real values never go in git. `.env.example` is the template.
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Editor and OS files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.sw?

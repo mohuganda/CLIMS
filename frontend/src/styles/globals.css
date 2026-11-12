@@ -1,0 +1,203 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import './shadcn.css';
+@import '@fontsource-variable/dm-sans';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'DM Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  /* Table header band: the reference's half-strength secondary, pre-mixed
+     with the card so a sticky header cell is opaque over scrolling content. */
+  --color-table-head: color-mix(in oklch, var(--secondary) 50%, var(--card));
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  /* Cards are 12px in the reference theme; the multiplier scale would give 11.2px. */
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.5);
+  --radius-4xl: calc(var(--radius) * 3);
+}
+
+/*
+ * Light theme. The reference design ships dark only; these are its hues
+ * re-pitched for a white surface. Two rules explain every value that differs:
+ *   - `--primary` keeps the reference green and is for FILLS (buttons, bars).
+ *     It is 2.5:1 on white, so green TEXT and icons use `--success` instead.
+ *   - status and chart colours are darkened until text passes 4.5:1 on its own
+ *     10% tint and chart marks pass 3:1 on the card.
+ */
+:root {
+  --radius: 0.5rem;
+
+  --background: #fafafb;
+  --foreground: #0c0d0f;
+  --card: #ffffff;
+  --card-foreground: #0c0d0f;
+  --popover: #ffffff;
+  --popover-foreground: #0c0d0f;
+
+  --primary: #45ba50;
+  --primary-foreground: #020203;
+  --secondary: #f2f3f5;
+  --secondary-foreground: #0c0d0f;
+  --muted: #f2f3f5;
+  --muted-foreground: #62666d;
+  --accent: #f2f3f5;
+  --accent-foreground: #0c0d0f;
+
+  --destructive: #c62828;
+  --success: #177534;
+  --warning: #a84c06;
+  --info: #0a6a9b;
+
+  --border: #e4e6e9;
+  /* Field outlines are the only thing marking a field on a white card, so
+     they carry 3:1 rather than the hairline used for cards and dividers. */
+  --input: #8b9097;
+  --ring: #2f9e42;
+
+  /* Categorical series, always assigned in this order. Validated as a set for
+     colour-vision separation and 3:1 against the card. Red is absent on
+     purpose: it is reserved for `--destructive`. */
+  --chart-1: #0a96cc;
+  --chart-2: #2f9e42;
+  --chart-3: #8b62e3;
+  --chart-4: #e2710a;
+  --chart-5: #c9417f;
+
+  --sidebar: #fdfdfd;
+  --sidebar-foreground: #0c0d0f;
+  --sidebar-primary: #45ba50;
+  --sidebar-primary-foreground: #020203;
+  --sidebar-accent: #f2f3f5;
+  --sidebar-accent-foreground: #0c0d0f;
+  --sidebar-border: #e4e6e9;
+  --sidebar-ring: #2f9e42;
+}
+
+/* Dark theme: the reference design's own values, except the chart series. */
+.dark {
+  --background: #020203;
+  --foreground: #eeeeee;
+  --card: #050607;
+  --card-foreground: #eeeeee;
+  --popover: #050607;
+  --popover-foreground: #eeeeee;
+
+  --primary: #45ba50;
+  --primary-foreground: #020203;
+  --secondary: #101214;
+  --secondary-foreground: #eeeeee;
+  --muted: #101214;
+  --muted-foreground: #8f8f8f;
+  --accent: #101214;
+  --accent-foreground: #eeeeee;
+
+  --destructive: #f14d4c;
+  --success: #45ba50;
+  --warning: #ff8918;
+  --info: #00b5eb;
+
+  --border: #191b1d;
+  --input: #5c6168;
+  --ring: #45ba50;
+
+  /* The reference hues, stepped down slightly so marks sit inside the
+     lightness band that keeps series distinguishable on a near-black card. */
+  --chart-1: #009fcf;
+  --chart-2: #3ba846;
+  --chart-3: #9a78e0;
+  --chart-4: #d9740f;
+  --chart-5: #d1528c;
+
+  --sidebar: #040406;
+  --sidebar-foreground: #eeeeee;
+  --sidebar-primary: #45ba50;
+  --sidebar-primary-foreground: #020203;
+  --sidebar-accent: #101214;
+  --sidebar-accent-foreground: #eeeeee;
+  --sidebar-border: #191b1d;
+  --sidebar-ring: #45ba50;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    color-scheme: light;
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
+    caret-color: var(--success);
+    accent-color: var(--success);
+    /* Keep a focused or linked element clear of the sticky header. */
+    scroll-padding-top: 5rem;
+    /* Remove the double-tap-to-zoom delay; pinch zoom still works. */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: color-mix(in oklch, var(--primary) 20%, transparent);
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklch, var(--primary) 35%, transparent);
+    color: var(--foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

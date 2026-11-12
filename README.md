@@ -1,6 +1,6 @@
 # CLIMS Full-Stack Application
 
-A containerized full-stack application built with **Next.js**, **Go (Golang)**, **MariaDB**, and **Nginx**.
+A containerized full-stack application built with **React (Vite)**, **Go (Golang)**, **MariaDB**, and **Nginx**.
 
 ---
 
@@ -8,7 +8,7 @@ A containerized full-stack application built with **Next.js**, **Go (Golang)**, 
 
 The application is structured into four main isolated components managed via Docker Compose:
 
-1. **Frontend**: Next.js App Router (TypeScript, Tailwind CSS).
+1. **Frontend**: React single-page app built with Vite (TypeScript, Tailwind CSS, shadcn/ui), served as static files by its own Nginx container. See [`frontend/README.md`](frontend/README.md).
 2. **Backend**: Go API server.
 3. **Database**: MariaDB instance pre-initialized with `clims_dump_11Nov2026.sql`.
 4. **Reverse Proxy**: Nginx acting as a unified entry point routing traffic between the frontend and backend.
@@ -27,7 +27,7 @@ The application is structured into four main isolated components managed via Doc
            / (Frontend)  │        │  /api/ (Backend)
                          ▼        ▼
         ┌──────────────────┐    ┌──────────────────┐
-        │ Next.js Frontend │    │    Go Backend    │
+        │  React Frontend  │    │    Go Backend    │
         └──────────────────┘    └────────┬─────────┘
                                          │
                                          │ (Port 3306)
@@ -50,14 +50,15 @@ clims/
 │   ├── Dockerfile           # Multi-stage Docker build for Go
 │   ├── go.mod
 │   └── go.sum
-├── frontend/                 # Next.js Frontend Application
+├── frontend/                 # React web app (Vite)
 │   ├── src/
-│   │   ├── app/             # App Router pages and layouts
-│   │   ├── components/      # UI components
-│   │   └── lib/             # API helpers and client utilities
-│   ├── Dockerfile           # Multi-stage Docker build for Next.js
-│   ├── package.json
-│   └── tailwind.config.js
+│   │   ├── app/             # Providers, router and route table
+│   │   ├── features/        # One folder per domain: auth, users, condoms, inventory, hotspots…
+│   │   ├── components/      # Shared UI; components/ui holds the shadcn primitives
+│   │   └── lib/             # API client, storage, table, format and validation helpers
+│   ├── dev/                 # Mock API for developing without a backend
+│   ├── DESIGN.md            # Theme tokens and UI rules
+│   └── package.json
 ├── nginx/                    # Reverse Proxy Configurations
 │   ├── app.conf              # Server block routing rules
 │   └── nginx.conf            # Global Nginx directives
@@ -85,7 +86,8 @@ The application uses environment files (`dev.env` and `prod.env`) to manage envi
 | `DB_PORT`             | Host exposed DB port     | `3307`                  | `3306`                       |
 | `DB_HOST`             | Database host container  | `mariadb`               | `mariadb`                    |
 | `PORT`                | Backend container port   | `8080`                  | `8080`                       |
-| `NEXT_PUBLIC_API_URL` | Public API base URL      | `http://localhost:8080` | `https://yourdomain.com/api` |
+| `VITE_API_BASE_URL`   | API base URL, compiled into the web app at build time | `/api` | `/api` |
+| `VITE_GOOGLE_MAPS_API_KEY` | Browser key for the hotspot map (optional, not a secret) | *empty* | *Referrer-restricted key* |
 | `NGINX_PORT`          | Host HTTP listening port | `80`                    | `80`                         |
 
 ---

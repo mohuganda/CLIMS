@@ -48,11 +48,16 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      # The image needs both frontend/ and infra/docker/frontend/, so the
+      # build context is the repository root.
+      context: ../..
+      dockerfile: infra/docker/frontend/Dockerfile
+      args:
+        # Compiled into the bundle at build time. `/api` means "same origin,
+        # through the nginx proxy below".
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
     container_name: clims_frontend
-    environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     depends_on:
       backend:
         condition: service_healthy # Waits for backend health check to pass before starting frontend

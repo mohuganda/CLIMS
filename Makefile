@@ -1,4 +1,4 @@
-.PHONY: help build-backend run-backend build-frontend run-frontend install-frontend docker-up docker-down docker-build clean test
+.PHONY: help build-backend run-backend build-frontend run-frontend install-frontend check-frontend docker-up docker-down docker-build clean test
 
 # Project variables
 VERSION ?= 1.0.0
@@ -12,9 +12,10 @@ help:
 	@echo "    make run-backend     - Run the backend server locally"
 	@echo ""
 	@echo "  Frontend:"
-	@echo "    make install-frontend- Install frontend dependencies (npm install)"
-	@echo "    make run-frontend    - Run the Next.js frontend development server"
-	@echo "    make build-frontend  - Build the Next.js frontend for production"
+	@echo "    make install-frontend- Install frontend dependencies from the lockfile (npm ci)"
+	@echo "    make run-frontend    - Run the frontend development server"
+	@echo "    make build-frontend  - Build the frontend for production"
+	@echo "    make check-frontend  - Format check, lint, type-check, test and build the frontend"
 	@echo ""
 	@echo "  Docker Compose:"
 	@echo "    make docker-up       - Start the entire multi-container stack"
@@ -39,15 +40,19 @@ run-backend:
 # --- Frontend Targets ---
 install-frontend:
 	@echo "Installing frontend dependencies..."
-	cd frontend && npm install
+	cd frontend && npm ci
 
 run-frontend:
-	@echo "Starting Next.js frontend dev server..."
+	@echo "Starting frontend dev server..."
 	cd frontend && npm run dev
 
 build-frontend:
-	@echo "Building Next.js frontend production bundle..."
+	@echo "Building frontend production bundle..."
 	cd frontend && npm run build
+
+check-frontend:
+	@echo "Checking frontend (format, lint, types, tests, build)..."
+	cd frontend && npm run check
 
 # --- Docker Compose Targets ---
 docker-up:
@@ -67,8 +72,8 @@ clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf backend/bin
 	rm -f backend/server
-	rm -rf frontend/.next
-	rm -rf frontend/out
+	rm -rf frontend/dist
+	rm -rf frontend/coverage
 
 test:
 	@echo "Running backend tests..."

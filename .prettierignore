@@ -1,0 +1,15 @@
+# Generated, vendored, or local-only files
+**/node_modules/
+**/AGENTS.md
+# The web app is formatted by its own Prettier configuration: npm run format:check in frontend/
+frontend/
+mobile/.expo/
+mobile/dist/
+docs/api/assets/
+artifacts/
+**/package-lock.json
+.vscode/
+.agents/
+.codex/
+.venv/
+.ruff_cache/

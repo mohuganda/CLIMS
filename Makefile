@@ -1,7 +1,14 @@
 .PHONY: help build-backend run-backend build-frontend run-frontend install-frontend check-frontend docker-up docker-down docker-build clean test
 
+ENVIRONMENT ?= dev
+ifeq ($(filter $(ENVIRONMENT),dev prod),)
+$(error ENVIRONMENT must be dev or prod)
+endif
+ENV_FILE ?= infra/env/$(ENVIRONMENT).env
+COMPOSE = docker compose --env-file $(ENV_FILE) -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.$(ENVIRONMENT).yml
+
 # Project variables
-VERSION ?= 1.0.0
+VERSION ?= $(shell cat VERSION)
 COMMIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_TIME ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -17,14 +24,36 @@ help:
 	@echo "    make build-frontend  - Build the frontend for production"
 	@echo "    make check-frontend  - Format check, lint, type-check, test and build the frontend"
 	@echo ""
+	@echo "  Mobile:"
+	@echo "    make install-mobile  - Install Expo/React Native dependencies"
+	@echo "    make run-mobile      - Start Expo on the host"
+	@echo "    make check-mobile    - Lint and type-check the mobile project"
+	@echo ""
 	@echo "  Docker Compose:"
-	@echo "    make docker-up       - Start the entire multi-container stack"
+	@echo "    make docker-up       - Start the selected ENVIRONMENT (default: dev)"
+	@echo "    make dev-up/prod-up   - Start the development or production stack"
+	@echo "    make compose-config  - Validate the selected Compose configuration"
+	@echo "    make mobile-export   - Export production mobile JavaScript artifacts"
 	@echo "    make docker-down     - Stop and remove Docker Compose containers"
-	@echo "    make docker-build    - Rebuild and start Docker stack with version args"
+	@echo "    make docker-build    - Rebuild and start the Docker stack"
+	@echo ""
+	@echo "    make setup           - Create the local environment file if missing"
+	@echo "    make db-up           - Start PostgreSQL only"
+	@echo "    make db-seed         - Import legacy data into an empty migrated database"
+	@echo "    make sql-convert     - Regenerate PostgreSQL SQL from the MySQL dump"
+	@echo "    make migrate-create NAME=description - Generate the next SQL up/down pair"
 	@echo ""
 	@echo "  General:"
 	@echo "    make clean           - Remove build binaries and artifacts"
 	@echo "    make test            - Run backend tests"
+	@echo "    make lint            - Run Go, web, mobile, and Python linters"
+	@echo "    make format          - Format Go, Python, web/mobile, and documentation"
+	@echo "    make format-check    - Check formatting without modifying files"
+	@echo "    make version-check   - Check shared application version metadata"
+	@echo "    make version-set VERSION=x.y.z - Update all application versions"
+	@echo "    make check-stack     - Verify selected environment routes (dev includes Metro)"
+	@echo "    make check-environments - Verify dev/prod Docker and Compose conventions"
+	@echo "    make docs-check      - Validate OpenAPI, documentation links, and Swagger assets"
 
 # --- Backend Targets ---
 build-backend:
@@ -35,7 +64,7 @@ build-backend:
 
 run-backend:
 	@echo "Starting backend server locally..."
-	cd backend && go run ./cmd/server
+	set -a; . ./$(ENV_FILE); set +a; cd backend && go run ./cmd/server
 
 # --- Frontend Targets ---
 install-frontend:
@@ -57,15 +86,15 @@ check-frontend:
 # --- Docker Compose Targets ---
 docker-up:
 	@echo "Starting Docker Compose environment..."
-	docker compose up -d
+	$(COMPOSE) up -d --build --wait
 
 docker-down:
 	@echo "Stopping Docker Compose environment..."
-	docker compose down
+	$(COMPOSE) down
 
 docker-build:
 	@echo "Building and starting Docker stack with version args..."
-	VERSION=$(VERSION) COMMIT_HASH=$(COMMIT_HASH) BUILD_TIME=$(BUILD_TIME) docker compose up --build -d
+	VERSION=$(VERSION) COMMIT_HASH=$(COMMIT_HASH) BUILD_TIME=$(BUILD_TIME) $(COMPOSE) up --build -d --wait
 
 # --- Utility Targets ---
 clean:
@@ -78,3 +107,101 @@ clean:
 test:
 	@echo "Running backend tests..."
 	cd backend && go test -v ./...
+.PHONY: setup db-up db-seed sql-convert
+setup:
+	@test -f $(ENV_FILE) || cp infra/env/$(ENVIRONMENT).env.example $(ENV_FILE)
+	@echo "Environment ready: $(ENV_FILE)"
+
+db-up:
+	$(COMPOSE) up -d --wait postgres
+
+db-seed:
+	$(COMPOSE) exec -T postgres sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1' < infra/database/clims_postgres_seed.sql
+
+sql-convert:
+	python3 scripts/convert_mysql_dump.py
+
+.PHONY: migrate-create
+migrate-create: export MIGRATION_NAME = $(NAME)
+migrate-create:
+	python3 scripts/create_migration.py
+
+.PHONY: create-admin test-integration
+create-admin:
+	set -a; . ./$(ENV_FILE); set +a; cd backend && go run ./cmd/create-admin
+
+test-integration:
+	@test -n "$(TEST_DATABASE_URL)" || (echo "Set TEST_DATABASE_URL to an isolated PostgreSQL server with CREATE DATABASE permission"; exit 1)
+	cd backend && go test -count=1 ./internal/integration
+
+.PHONY: docs-check
+docs-check:
+	python3 scripts/check_docs.py
+	docker run --rm -v "$(CURDIR)/docs:/docs:ro" python:3.13-alpine sh -c 'pip install --disable-pip-version-check --quiet openapi-spec-validator==0.7.2 && python -m openapi_spec_validator /docs/api/openapi.json'
+
+.PHONY: install-mobile run-mobile check-mobile check-stack
+install-mobile:
+	cd mobile && npm ci
+
+run-mobile:
+	cd mobile && npm start
+
+check-mobile:
+	cd mobile && npm run lint && npm run typecheck
+
+check-stack:
+	STACK_ENV=$(ENVIRONMENT) python3 scripts/check_stack.py
+
+.PHONY: dev-up prod-up dev-down prod-down compose-config mobile-export
+dev-up:
+	$(MAKE) ENVIRONMENT=dev docker-up
+
+prod-up:
+	$(MAKE) ENVIRONMENT=prod docker-up
+
+dev-down:
+	$(MAKE) ENVIRONMENT=dev docker-down
+
+prod-down:
+	$(MAKE) ENVIRONMENT=prod docker-down
+
+compose-config:
+	$(COMPOSE) config --quiet
+
+mobile-export:
+	$(MAKE) ENVIRONMENT=prod mobile-export-run
+
+.PHONY: mobile-export-run
+mobile-export-run:
+	@test "$(ENVIRONMENT)" = prod || (echo "Mobile release artifacts use ENVIRONMENT=prod"; exit 1)
+	$(COMPOSE) run --build --rm --no-deps mobile
+
+.PHONY: check-environments
+check-environments:
+	python3 scripts/check_environments.py
+
+.PHONY: lint format format-check
+lint:
+	cd backend && go vet ./...
+	cd frontend && npm run lint
+	cd mobile && npm run lint -- --max-warnings=0
+	python3 -m ruff check scripts
+
+format:
+	npm run format
+	cd frontend && npm run format
+	python3 -m ruff format scripts
+	gofmt -w backend
+
+format-check:
+	npm run format:check
+	cd frontend && npm run format:check
+	python3 -m ruff format --check scripts
+	@test -z "$$(gofmt -l backend)" || (gofmt -l backend; exit 1)
+
+.PHONY: version-check version-set
+version-check:
+	python3 scripts/project_version.py check
+
+version-set:
+	python3 scripts/project_version.py set "$(VERSION)"

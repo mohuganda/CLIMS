@@ -1,12 +1,10 @@
-# Keeps the build context small and keeps local state out of images.
 .git
-**/node_modules
-**/dist
-**/coverage
-**/.env
-**/.env.*
-!**/.env.example
-infra/env/*.env
-**/*.log
 **/.DS_Store
-infra/compose/*.sql
+**/__pycache__
+**/node_modules
+backend/bin
+backend/server
+frontend
+mobile
+infra/env/*.env
+artifacts

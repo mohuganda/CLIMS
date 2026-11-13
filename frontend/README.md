@@ -10,7 +10,7 @@ standards in [`../practices.md`](../practices.md). What changed and why is in
 
 ## Requirements
 
-- Node.js 22.12 or newer (`.nvmrc` pins 24)
+- Node.js 22.12 or newer (the repository `.nvmrc` selects 22)
 - npm 10 or newer
 
 ## Quick start
@@ -129,7 +129,7 @@ When an endpoint exists, delete the sample entry and read the value through a qu
 - **Session token.** Kept in `localStorage` and sent as a bearer header, because that is what the
   API issues. Any script running on the page could read it, so the defence is not letting foreign
   script run: no `dangerouslySetInnerHTML`, no inline script, and a Content-Security-Policy in the
-  container (`infra/docker/frontend/security-headers.conf`). Moving to an `HttpOnly` cookie needs a
+  container (`nginx/security-headers.conf`). Moving to an `HttpOnly` cookie needs a
   backend change and is the better end state.
 - **The route guard is not access control.** It decides what the browser shows. The API must
   authorise every request; a page reached by tampering still gets a 401 for its data.
@@ -166,10 +166,10 @@ Tokens, the rules for using them, and what to check before shipping a screen are
 
 ```bash
 # From the repository root
-docker build -f infra/docker/frontend/Dockerfile -t clims-frontend .
+docker build -f infra/docker/frontend/Dockerfile.prod -t clims-frontend frontend
 docker run --rm -p 3000:3000 clims-frontend
 ```
 
 The image serves the built app with nginx as a non-root user on port 3000, with a health check at
-`/healthz`. It does not serve the API: `/api/` is routed to the backend by the repository's
-reverse proxy (`infra/nginx`).
+`/healthz`; its nginx configuration lives in `nginx/`. It does not serve the API: `/api/` is routed
+to the backend by the repository's reverse proxy (`infra/nginx`), which forwards the path unchanged.

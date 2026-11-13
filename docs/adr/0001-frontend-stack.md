@@ -8,7 +8,7 @@
 
 `frontend/` was empty. The web client existed as a separate prototype repository, `LMD_FE`: a Vite
 and React app on the TailAdmin template with Ant Design, ApexCharts and Redux. It was to become
-this repository's frontend, held to [`practices.md`](../../practices.md), and restyled to the
+this repository's frontend, held to the team's `practices.md`, and restyled to the
 SalesOps dashboard reference in light mode using shadcn/ui components.
 
 An audit of the prototype before importing it found:
@@ -25,6 +25,10 @@ An audit of the prototype before importing it found:
 
 This repository's README, Dockerfile and Makefile, written before the import, assumed a Next.js
 frontend. Its Go backend serves `/api/v1/auth` only.
+
+While this work was in review, release 2.0.0 added a Next.js scaffold to `frontend/`: a welcome
+page with an API readiness check, plus development and production images, Compose overrides and CI
+built around it. The import replaces that scaffold and keeps the surrounding structure.
 
 ## Decisions
 

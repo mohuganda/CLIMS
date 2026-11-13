@@ -1,0 +1,12 @@
+{
+  "name": "clims-tooling",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "3.10.1"
+  },
+  "version": "2.0.0"
+}

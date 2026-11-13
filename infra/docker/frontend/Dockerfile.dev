@@ -1,21 +1,20 @@
 # syntax=docker/dockerfile:1
 
-# Development image: the Vite dev server with hot reload. Mount the frontend
-# directory over /app so edits on the host are picked up:
-#
-#   docker build -f infra/docker/frontend/Dockerfile.dev -t clims-frontend-dev .
-#   docker run --rm -p 3000:3000 -v "$PWD/frontend/src:/app/src" clims-frontend-dev
+# Development image: the Vite dev server with hot reload. The development
+# Compose override builds it with frontend/ as the context and mounts the
+# source over /app, so edits on the host are picked up.
 #
 # Not for production: it serves unminified code and exposes the dev tooling.
 
-FROM node:24-alpine
+FROM node:22-alpine
 WORKDIR /app
+ENV NODE_ENV=development
 
-COPY frontend/package.json frontend/package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
-COPY frontend/ ./
+COPY . .
 
-USER node
 EXPOSE 3000
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Refresh the dependency volume when a source-mounted lockfile changes.
+CMD ["sh", "-c", "npm ci --prefer-offline --no-audit --no-fund && exec npm run dev -- --host 0.0.0.0"]

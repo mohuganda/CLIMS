@@ -1,0 +1,49 @@
+# Separate project name keeps production resources isolated from development.
+name: clims-prod
+
+services:
+  postgres:
+    image: clims-postgres:prod
+    build:
+      context: ../..
+      dockerfile: infra/docker/postgres/Dockerfile.prod
+
+  backend:
+    image: ${BACKEND_IMAGE:-clims-backend:prod}
+    build:
+      context: ../..
+      dockerfile: infra/docker/backend/Dockerfile.prod
+      args:
+        VERSION: ${VERSION:-}
+        COMMIT_HASH: ${COMMIT_HASH:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-clims-frontend:prod}
+    build:
+      context: ../../frontend
+      dockerfile: ../infra/docker/frontend/Dockerfile.prod
+      args:
+        VERSION: ${VERSION:-}
+        # Compiled into the public bundle at build time; never secrets.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+
+  nginx:
+    image: clims-nginx:prod
+    build:
+      context: ../..
+      dockerfile: infra/docker/nginx/Dockerfile.prod
+
+  mobile:
+    profiles: ["artifacts"]
+    image: ${MOBILE_IMAGE:-clims-mobile:prod}
+    build:
+      context: ../../mobile
+      dockerfile: ../infra/docker/mobile/Dockerfile.prod
+      args:
+        VERSION: ${VERSION:-}
+        EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-}
+    volumes:
+      - ../../artifacts/mobile:/artifacts
+    restart: "no"

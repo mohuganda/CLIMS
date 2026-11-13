@@ -19,14 +19,15 @@ Notable changes to CLIMS. The format follows [Keep a Changelog](https://keepacha
   (`npm run mock-api`).
 - Unit and behaviour tests, with coverage enforced at 80% on domain code.
 - ESLint (type-aware, strict, accessibility rules) and Prettier, run in CI with tests and build
-  (`.github/workflows/frontend.yml`).
+  (`.github/workflows/ci.yml`).
 - A production container image for the web app: nginx as a non-root user, health check,
   long-lived caching of hashed assets, and security headers including a Content-Security-Policy.
 
 ### Changed
 
-- The frontend is a static single-page app, not Next.js. `README.md`, `Makefile`, the compose
-  frontend service and the env examples were updated to match; `NEXT_PUBLIC_API_URL` is replaced by
+- The frontend is a static single-page app; it replaces the Next.js scaffold added in 2.0.0.
+  `README.md`, `Makefile`, the Compose frontend service, CI, the frontend Dockerfiles and the env
+  examples were updated to match; the scaffold's `BACKEND_URL` rewrites are replaced by
   `VITE_API_BASE_URL`.
 - Screen addresses are consistent and no longer misspelled (for example `/moh/users` instead of
   `/moh/admin/userManagment`).

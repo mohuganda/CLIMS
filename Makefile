@@ -22,6 +22,7 @@ help:
 	@echo "    make install-frontend- Install frontend dependencies (npm ci)"
 	@echo "    make run-frontend    - Run the Next.js frontend development server"
 	@echo "    make build-frontend  - Build the Next.js frontend for production"
+	@echo "    make check-frontend  - Format check, lint, type-check, test and build the frontend"
 	@echo ""
 	@echo "  Mobile:"
 	@echo "    make install-mobile  - Install Expo/React Native dependencies"
@@ -97,6 +98,7 @@ clean:
 	rm -rf backend/bin
 	rm -f backend/server
 	rm -rf frontend/.next
+	rm -rf frontend/coverage
 	rm -rf frontend/out
 
 test:
@@ -134,7 +136,7 @@ docs-check:
 	python3 scripts/check_docs.py
 	docker run --rm -v "$(CURDIR)/docs:/docs:ro" python:3.13-alpine sh -c 'pip install --disable-pip-version-check --quiet openapi-spec-validator==0.7.2 && python -m openapi_spec_validator /docs/api/openapi.json'
 
-.PHONY: install-mobile run-mobile check-frontend check-mobile check-stack
+.PHONY: install-mobile run-mobile check-mobile check-stack
 install-mobile:
 	cd mobile && npm ci
 
@@ -142,7 +144,7 @@ run-mobile:
 	cd mobile && npm start
 
 check-frontend:
-	cd frontend && npm run typecheck
+	cd frontend && npm run check
 
 check-mobile:
 	cd mobile && npm run lint && npm run typecheck
@@ -187,11 +189,13 @@ lint:
 
 format:
 	npm run format
+	cd frontend && npm run format
 	python3 -m ruff format scripts
 	gofmt -w backend
 
 format-check:
 	npm run format:check
+	cd frontend && npm run format:check
 	python3 -m ruff format --check scripts
 	@test -z "$$(gofmt -l backend)" || (gofmt -l backend; exit 1)
 

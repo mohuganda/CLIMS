@@ -122,11 +122,22 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ matrix.project }}/package-lock.json
       - run: npm ci
+      - name: Check web app formatting
+        if: matrix.project == 'frontend'
+        run: npm run format:check
       - run: npm run lint -- --max-warnings=0
       - run: npm run typecheck
+      - name: Test the web app with coverage
+        if: matrix.project == 'frontend'
+        run: npm run test:coverage
       - name: Build Next.js
         if: matrix.project == 'frontend'
         run: npm run build
+      # Only what ships to users. A finding in development tooling does not put
+      # a vulnerable file in anyone's browser.
+      - name: Audit shipped web dependencies
+        if: matrix.project == 'frontend'
+        run: npm audit --omit=dev --audit-level=high
       - name: Export iOS and Android JavaScript bundles
         if: matrix.project == 'mobile'
         run: npm run export

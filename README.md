@@ -15,6 +15,7 @@ Project documentation lives in the root [`docs/`](docs/README.md) folder:
 - [Users module](docs/modules/users.md)
 - [RBAC module](docs/modules/rbac.md)
 - [Web and mobile projects](docs/clients.md)
+- [Web app guide](frontend/README.md) and [frontend stack decision](docs/adr/0001-frontend-stack.md)
 - [API reference and Swagger](docs/api/README.md)
 
 Run `make setup` and `make docker-up` from the repository root. Open [Swagger UI](http://localhost:8080/docs/) to explore the API.

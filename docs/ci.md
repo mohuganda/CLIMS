@@ -10,12 +10,12 @@ The workflow is also reusable by [tagged image releases](releases.md), which run
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | Formatting, docs, and Compose   | Prettier, Python Ruff lint/format, documentation links, vendored Swagger checksums, OpenAPI schema, and both Compose models |
 | Go lint and PostgreSQL tests    | `gofmt`, `go vet`, race-enabled unit/integration tests against PostgreSQL 16, and command builds                            |
-| frontend lint, types, and build | ESLint with zero warnings, TypeScript, and Next.js production build                                                         |
+| frontend lint, types, and build | Prettier, ESLint with zero warnings, TypeScript, tests with coverage thresholds, Next.js production build, and audit        |
 | mobile lint, types, and build   | ESLint with zero warnings, TypeScript, and Expo iOS/Android JavaScript export                                               |
 
 The database job supplies `TEST_DATABASE_URL`, so integration tests run instead of skipping. Tests create and drop their own database, exercise migrations and legacy imports, and check authentication and RBAC. Its PostgreSQL service is disposable and uses CI-only credentials.
 
-The clients currently have no component or end-to-end test suites; CI checks lint, types, and compilation/export. Mobile export does not build or sign APK/IPA files or run a simulator. CI validates Compose configuration without starting the complete Docker stack.
+The web app has unit and behaviour tests with coverage thresholds on domain code. The mobile project has no component or end-to-end test suite; CI checks its lint, types, and export. Mobile export does not build or sign APK/IPA files or run a simulator. CI validates Compose configuration without starting the complete Docker stack.
 
 ## Run checks locally
 

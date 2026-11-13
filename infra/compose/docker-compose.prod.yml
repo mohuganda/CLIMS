@@ -25,6 +25,8 @@ services:
       dockerfile: ../infra/docker/frontend/Dockerfile.prod
       args:
         VERSION: ${VERSION:-}
+        # Compiled into the public bundle at build time; never a secret.
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
 
   nginx:
     image: clims-nginx:prod

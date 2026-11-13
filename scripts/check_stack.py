@@ -17,7 +17,7 @@ def get(url, headers=None):
 
 
 html = get(base + "/").decode()
-assert "CLIMS" in html and "A connected foundation" in html, "Next.js page was not served"
+assert "CLIMS" in html and "MOH dashboard" in html, "Next.js page was not served"
 assert json.loads(get(base + "/health/ready"))["data"]["database"] == "connected"
 assert "swagger-ui" in get(base + "/docs/").decode()
 assert json.loads(get(base + "/docs/openapi.json"))["openapi"] == "3.0.3"

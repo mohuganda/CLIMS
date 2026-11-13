@@ -2,7 +2,7 @@
 
 [Documentation index](README.md)
 
-The branch scaffolds clients and the gateway; it does not add login or user-management screens. Both clients include a CLIMS welcome screen and a real API readiness check.
+The web app has sign-in, user management, condom items, stock, and hotspot screens; see the [web app guide](../frontend/README.md) and the [frontend stack decision](adr/0001-frontend-stack.md). The mobile project is a scaffold with a CLIMS welcome screen and a real API readiness check.
 
 ## Projects and toolchains
 
@@ -51,9 +51,9 @@ make install-frontend
 make run-frontend
 ```
 
-Open `http://localhost:3000`. Next.js rewrites `/api`, `/docs`, and `/health` to `BACKEND_URL`, defaulting to the Nginx gateway at `http://localhost:8080`. Copy `frontend/.env.example` to `frontend/.env.local` to change it. Browser API calls use relative paths; no private database credentials are bundled into the client.
+Open `http://localhost:3000`. Next.js rewrites `/api`, `/docs`, and `/health` to `BACKEND_URL`, defaulting to the Nginx gateway at `http://localhost:8080`. Copy `frontend/.env.example` to `frontend/.env.local` to change it, or point it at the mock API in `frontend/dev/` to work without a backend. Browser API calls use relative paths; no private database credentials are bundled into the client. `NEXT_PUBLIC_*` values are compiled into the public bundle, so they must never hold secrets. The screens call endpoints the Go API does not serve yet; the [web app guide](../frontend/README.md) lists them.
 
-The development Compose override uses `infra/docker/frontend/Dockerfile.dev`; production uses `Dockerfile.prod`. The web app uses system fonts and does not download Google Fonts.
+The development Compose override uses `infra/docker/frontend/Dockerfile.dev`; production uses `Dockerfile.prod`. The web app bundles its font and does not download Google Fonts. `make check-frontend` runs formatting, lint, types, tests with coverage, and the build.
 
 ```sh
 make check-frontend

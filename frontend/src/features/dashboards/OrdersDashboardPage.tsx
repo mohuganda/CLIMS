@@ -1,3 +1,5 @@
+'use client';
+
 import { SampleDataNotice } from '@/components/SampleData';
 import { OrderSummaryCards } from '@/features/orders/OrderSummaryCards';
 

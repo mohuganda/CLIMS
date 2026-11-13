@@ -1,7 +1,7 @@
 # CLIMS web app
 
 The browser client for CLIMS: stock, order and hotspot management for last-mile condom
-distribution. A React single-page app built with Vite, TypeScript, Tailwind CSS and shadcn/ui.
+distribution. A Next.js (App Router) app in TypeScript, with Tailwind CSS and shadcn/ui.
 
 It was imported from the `LMD_FE` prototype (commit `1b8f580`, 2023-09-26) and rebuilt to the
 standards in [`../practices.md`](../practices.md). What changed and why is in
@@ -25,8 +25,8 @@ The app needs an API to talk to. Two ways to give it one:
 **Without a backend** (the usual way to work on the UI). A mock API ships in `dev/`:
 
 ```bash
-npm run mock-api                                              # terminal 1
-VITE_DEV_API_PROXY_TARGET=http://127.0.0.1:8787 npm run dev   # terminal 2
+npm run mock-api                                # terminal 1
+BACKEND_URL=http://127.0.0.1:8787 npm run dev   # terminal 2
 ```
 
 Open <http://localhost:3000> and sign in with any username and any password except `wrong`.
@@ -34,19 +34,20 @@ Open <http://localhost:3000> and sign in with any username and any password exce
 scripts, missing fields, zero and seven-digit quantities); `MOCK_DATA=empty` serves nothing. Use
 both before calling a screen done.
 
-**Against a real API.** Set `VITE_DEV_API_PROXY_TARGET` in `.env.local` to the API's base URL. The
-dev server forwards `/api/*` to it, so the browser never makes a cross-origin request.
+**Against a real API.** Set `BACKEND_URL` in `.env.local` to where the API is served (it defaults
+to the repository's Nginx gateway on port 8080). The dev server forwards `/api/*`, `/docs` and
+`/health` there with the path unchanged, so the browser never makes a cross-origin request.
 
 ## Scripts
 
 | Command                 | What it does                                                   |
 | ----------------------- | -------------------------------------------------------------- |
-| `npm run dev`           | Dev server with hot reload on port 3000                        |
+| `npm run dev`           | Next.js dev server with hot reload on port 3000                |
 | `npm run mock-api`      | Mock API on port 8787 (`MOCK_DATA=demo\|worst\|empty`)         |
-| `npm run build`         | Type-check, then build to `dist/`                              |
-| `npm run preview`       | Serve the built app locally                                    |
+| `npm run build`         | Type-check, then build to `.next/`                             |
+| `npm run start`         | Serve the built app locally                                    |
 | `npm run lint`          | ESLint, zero warnings allowed                                  |
-| `npm run typecheck`     | TypeScript, no emit                                            |
+| `npm run typecheck`     | Generate route types, then TypeScript, no emit                 |
 | `npm run format`        | Prettier, write                                                |
 | `npm run test`          | Unit and behaviour tests, once                                 |
 | `npm run test:coverage` | Tests with coverage; fails under 80% on domain code            |
@@ -56,14 +57,14 @@ Run `npm run check` before opening a pull request. CI runs the same thing.
 
 ## Configuration
 
-Set at build time. Vite compiles every `VITE_*` value into the public JavaScript bundle, so
-**none of these may be a secret**.
+Next.js compiles every `NEXT_PUBLIC_*` value into the public JavaScript bundle at build time, so
+**none of those may be a secret**.
 
-| Variable                    | Default | Purpose                                                                                                  |
-| --------------------------- | ------- | -------------------------------------------------------------------------------------------------------- |
-| `VITE_API_BASE_URL`         | `/api`  | Where the browser sends API calls. A same-origin path, or an `https://` URL (`http` for localhost only). |
-| `VITE_GOOGLE_MAPS_API_KEY`  | empty   | Browser key for the hotspot map. Restrict it by HTTP referrer. Without it the map page shows a notice.   |
-| `VITE_DEV_API_PROXY_TARGET` | unset   | Dev server only: where `/api/*` is forwarded.                                                            |
+| Variable                          | Default                 | Purpose                                                                                                  |
+| --------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_BASE_URL`        | `/api`                  | Where the browser sends API calls. A same-origin path, or an `https://` URL (`http` for localhost only). |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | empty                   | Browser key for the hotspot map. Restrict it by HTTP referrer. Without it the map page shows a notice.   |
+| `BACKEND_URL`                     | `http://localhost:8080` | Server side only: where `/api`, `/docs` and `/health` are forwarded when the app is run on its own.      |
 
 A value that fails validation stops the app at startup with a message naming the variable.
 
@@ -71,8 +72,10 @@ A value that fails validation stops the app at startup with a message naming the
 
 ```
 src/
-  main.tsx            Composition root: creates the store, HTTP client and query client, wires them up
-  app/                Providers, the route table, the route guard
+  app/                Next.js routes: one `page.tsx` per screen, the root layout, the signed-in layout
+  proxy.ts            Sets the Content-Security-Policy, with a fresh nonce for every request
+  providers/          Composition root: creates the store, HTTP client and query client, wires them up
+  navigation/         The navigation table, the guards and the frame every signed-in screen sits in
   features/<name>/    One folder per domain: its API calls, queries, form rules, pages and tests
   components/         Shared UI (data table, form fields, charts, layout, states)
   components/ui/      shadcn/ui primitives, generated by the shadcn CLI
@@ -87,8 +90,14 @@ Rules that keep it that way:
 
 - **Dependencies point inward.** `features` may use `components` and `lib`; `lib` uses neither.
   Features do not import each other's pages.
-- **Nothing reaches for a global.** The store, HTTP client and storage are created in `main.tsx`
-  and passed down, which is also what lets every test build its own.
+- **Nothing reaches for a global.** The store, HTTP client and storage are created in
+  `providers/AppRoot.tsx` and passed down, which is also what lets every test build its own.
+- **Routes are thin.** A `page.tsx` names the screen it shows and takes its title from the
+  navigation table; the screen itself lives in `features/`. A page missing from the table fails
+  the build, and a test fails if the table lists a path that has no page.
+- **The app starts in the browser.** The session lives in the browser's storage, so the server
+  cannot know who is signed in. It sends the document, the page title and a loader; the providers
+  and the screen render once the browser has read that storage.
 - **One place knows the API's shape.** `lib/api/http.ts` handles the transport and the legacy
   "HTTP 200 with a failing `code`" envelope; each feature's `api.ts` validates its responses with a
   schema. Screens only ever see typed data or an `ApiError` with a message that is safe to show.
@@ -128,8 +137,9 @@ When an endpoint exists, delete the sample entry and read the value through a qu
 
 - **Session token.** Kept in `localStorage` and sent as a bearer header, because that is what the
   API issues. Any script running on the page could read it, so the defence is not letting foreign
-  script run: no `dangerouslySetInnerHTML`, no inline script, and a Content-Security-Policy in the
-  container (`nginx/security-headers.conf`). Moving to an `HttpOnly` cookie needs a
+  script run: no `dangerouslySetInnerHTML`, no inline script of our own, and a
+  Content-Security-Policy (`src/proxy.ts`) that only runs the inline scripts Next.js writes, each
+  marked with a nonce that is new for every request. Moving to an `HttpOnly` cookie needs a
   backend change and is the better end state.
 - **The route guard is not access control.** It decides what the browser shows. The API must
   authorise every request; a page reached by tampering still gets a 401 for its data.
@@ -151,7 +161,10 @@ Vitest with Testing Library. Three kinds of test, all in `src/` beside the code 
   text, plural boundaries).
 - **Behaviour tests** that render a page inside the real provider stack against a scripted
   network (`src/test/renderApp.tsx`): signing in and out, the route guard, each CRUD flow, and
-  what the user sees when the server refuses or cannot be reached.
+  what the user sees when the server refuses or cannot be reached. Navigation runs against an
+  in-memory stand-in for the Next.js router (`src/test/navigation.tsx`), and
+  `src/test/AppUnderTest.tsx` renders the real `page.tsx` files, so redirects are followed the way
+  a browser would.
 - **No snapshot tests.** They assert that nothing changed, not that anything is right.
 
 A new behaviour ships with a test. A bug fix ships with the test that would have caught it.
@@ -170,6 +183,6 @@ docker build -f infra/docker/frontend/Dockerfile.prod -t clims-frontend frontend
 docker run --rm -p 3000:3000 clims-frontend
 ```
 
-The image serves the built app with nginx as a non-root user on port 3000, with a health check at
-`/healthz`; its nginx configuration lives in `nginx/`. It does not serve the API: `/api/` is routed
-to the backend by the repository's reverse proxy (`infra/nginx`), which forwards the path unchanged.
+The image runs the standalone Next.js server as a non-root user on port 3000. Behind the
+repository's reverse proxy (`infra/nginx`) it does not serve the API: `/api/` is routed to the
+backend there, with the path unchanged. `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is a build argument.

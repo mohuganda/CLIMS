@@ -2,7 +2,7 @@
  * The path to send someone to after signing in: where they were headed when
  * the guard intercepted them, if that is a path inside this app.
  *
- * The value comes from router state, which a crafted link can influence, so
+ * The value comes from the address, which a crafted link controls, so
  * anything that could leave the site (`//evil.example`, `https://…`,
  * `/\evil.example`) or loop back to sign-in falls back to `fallback`.
  */

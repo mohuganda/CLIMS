@@ -1,3 +1,5 @@
+'use client';
+
 import { Info, Upload } from 'lucide-react';
 
 import { TextField } from '@/components/form/TextField';

@@ -1,3 +1,5 @@
+'use client';
+
 import { PackagePlus, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 

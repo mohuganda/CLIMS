@@ -114,6 +114,6 @@ describe('HotspotMapPage', () => {
     renderApp(<HotspotMapPage />, { signedIn: true, replies: [{ status: 200, body: hotspots }] });
 
     expect(await screen.findByText('The map is not set up')).toBeInTheDocument();
-    expect(screen.getByText(/VITE_GOOGLE_MAPS_API_KEY/)).toBeInTheDocument();
+    expect(screen.getByText(/NEXT_PUBLIC_GOOGLE_MAPS_API_KEY/)).toBeInTheDocument();
   });
 });

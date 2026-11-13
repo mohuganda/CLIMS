@@ -1,3 +1,5 @@
+'use client';
+
 import { Boxes, PackageCheck, Percent } from 'lucide-react';
 
 import { PendingTable } from '@/components/data-table/PendingTable';

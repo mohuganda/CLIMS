@@ -1,3 +1,5 @@
+'use client';
+
 import {
   createContext,
   use,
@@ -51,7 +53,6 @@ export function ThemeProvider({ storage, children }: ThemeProviderProps) {
   return <ThemeContext value={value}>{children}</ThemeContext>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components -- the hook and its provider are one unit
 export function useTheme(): ThemeContextValue {
   const value = use(ThemeContext);
   if (!value) throw new Error('useTheme must be used inside <ThemeProvider>.');

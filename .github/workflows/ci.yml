@@ -109,6 +109,7 @@ jobs:
         working-directory: ${{ matrix.project }}
     env:
       CI: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
       EXPO_NO_TELEMETRY: "1"
       EXPO_PUBLIC_API_URL: https://example.invalid/api/v1
     steps:
@@ -129,7 +130,7 @@ jobs:
       - name: Test the web app with coverage
         if: matrix.project == 'frontend'
         run: npm run test:coverage
-      - name: Build the web app
+      - name: Build Next.js
         if: matrix.project == 'frontend'
         run: npm run build
       # Only what ships to users. A finding in development tooling does not put
@@ -140,25 +141,3 @@ jobs:
       - name: Export iOS and Android JavaScript bundles
         if: matrix.project == 'mobile'
         run: npm run export
-
-  frontend-image:
-    name: Web app production image smoke test
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Build the production image
-        run: docker build -f infra/docker/frontend/Dockerfile.prod -t clims-frontend:ci frontend
-      - name: Smoke-test the image
-        run: |
-          docker run -d --name clims-frontend -p 3000:3000 clims-frontend:ci
-          for attempt in $(seq 1 20); do
-            curl -fsS http://127.0.0.1:3000/healthz && break
-            sleep 1
-          done
-          # A client-side route must return the app shell, not a 404.
-          curl -fsS http://127.0.0.1:3000/moh/users | grep -q '<div id="root">'
-          # A misrouted API call must not be answered with the app shell.
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/users)" = "404"

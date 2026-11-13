@@ -15,7 +15,7 @@ Every service has `Dockerfile.dev` and `Dockerfile.prod` under `infra/docker/<se
 | Service  | Development                                                         | Production                                            |
 | -------- | ------------------------------------------------------------------- | ----------------------------------------------------- |
 | backend  | Go toolchain, Air reloads, mounted source/docs, module/build caches | Compiled binary and bundled API docs, nonroot runtime |
-| frontend | Vite dev server, mounted source, dependency volume                  | Static build served by unprivileged Nginx             |
+| frontend | Next.js dev server, mounted source, dependency/build volumes        | Standalone Next.js server, Node user, built assets    |
 | mobile   | Expo Metro, mounted source, dependency volume                       | Optional iOS/Android JavaScript artifact export job   |
 | postgres | PostgreSQL 16, localhost database port                              | PostgreSQL 16, internal database port only            |
 | nginx    | Mounted development config, HTTP and Metro listeners                | Baked configuration, HTTP listener only               |

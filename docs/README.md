@@ -12,7 +12,7 @@ See [creating PostgreSQL migrations](migrations.md) for pinned CLI scaffolding, 
 | ---------------------------------------- | -------------------------------------------------------------------------------- |
 | [Setup](setup.md)                        | Start the stack, configure environments, and run the API locally                 |
 | [Environments](environments.md)          | Development reloads, production images, Compose selection, and mobile exports    |
-| [Web and mobile](clients.md)             | Vite web app, Expo, Nginx routing, and device setup                              |
+| [Web and mobile](clients.md)             | Next.js, Expo, Nginx routing, and device setup                                   |
 | [PostgreSQL](postgresql.md)              | Migrations, legacy imports, and data verification                                |
 | [Module architecture](modules/README.md) | Ownership, dependencies, request flow, and extension rules                       |
 | [Auth](modules/auth.md)                  | Registration, login, JWTs, and rate limits                                       |

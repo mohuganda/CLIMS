@@ -17,7 +17,7 @@ def get(url, headers=None):
 
 
 html = get(base + "/").decode()
-assert "<title>CLIMS</title>" in html and '<div id="root">' in html, "Web app was not served"
+assert "CLIMS" in html and "MOH dashboard" in html, "Next.js page was not served"
 assert json.loads(get(base + "/health/ready"))["data"]["database"] == "connected"
 assert "swagger-ui" in get(base + "/docs/").decode()
 assert json.loads(get(base + "/docs/openapi.json"))["openapi"] == "3.0.3"
@@ -37,6 +37,6 @@ if environment == "dev":
     )
     assert "launchAsset" in manifest, "Expo did not return a native application manifest"
 print(
-    f"PASS: {environment} Nginx gateway serves the web app, API readiness, Swagger, and authenticated API protection."
+    f"PASS: {environment} Nginx gateway serves Next.js, API readiness, Swagger, and authenticated API protection."
     + (" Expo Metro manifest is available." if environment == "dev" else "")
 )

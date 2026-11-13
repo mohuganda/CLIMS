@@ -1,3 +1,5 @@
+'use client';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CircleAlert, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
@@ -10,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { getErrorMessage } from '@/lib/api';
 
 import { useSignIn } from './hooks';
@@ -23,9 +24,8 @@ const credentialsSchema = z.object({
 
 type CredentialsForm = z.infer<typeof credentialsSchema>;
 
-/** The sign-in screen. On success the route guard moves the user on. */
+/** The sign-in screen. On success the guard around it moves the user on. */
 export default function SignInPage() {
-  useDocumentTitle('Sign in');
   const signIn = useSignIn();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const {

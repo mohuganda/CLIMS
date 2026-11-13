@@ -1,6 +1,6 @@
 # CLIMS
 
-CLIMS combines a React (Vite) web app, an Expo/React Native mobile project, a Go/Fiber API, and PostgreSQL 16. Docker Compose runs separate development and production configurations behind Nginx. Development includes the Metro server.
+CLIMS combines a Next.js web app, an Expo/React Native mobile project, a Go/Fiber API, and PostgreSQL 16. Docker Compose runs separate development and production configurations behind Nginx. Development includes the Metro server.
 
 Project documentation lives in the root [`docs/`](docs/README.md) folder:
 

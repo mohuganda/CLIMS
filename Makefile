@@ -1,4 +1,4 @@
-.PHONY: help build-backend run-backend build-frontend run-frontend install-frontend check-frontend docker-up docker-down docker-build clean test
+.PHONY: help build-backend run-backend build-frontend run-frontend install-frontend docker-up docker-down docker-build clean test
 
 ENVIRONMENT ?= dev
 ifeq ($(filter $(ENVIRONMENT),dev prod),)
@@ -19,9 +19,9 @@ help:
 	@echo "    make run-backend     - Run the backend server locally"
 	@echo ""
 	@echo "  Frontend:"
-	@echo "    make install-frontend- Install frontend dependencies from the lockfile (npm ci)"
-	@echo "    make run-frontend    - Run the frontend development server"
-	@echo "    make build-frontend  - Build the frontend for production"
+	@echo "    make install-frontend- Install frontend dependencies (npm ci)"
+	@echo "    make run-frontend    - Run the Next.js frontend development server"
+	@echo "    make build-frontend  - Build the Next.js frontend for production"
 	@echo "    make check-frontend  - Format check, lint, type-check, test and build the frontend"
 	@echo ""
 	@echo "  Mobile:"
@@ -72,16 +72,12 @@ install-frontend:
 	cd frontend && npm ci
 
 run-frontend:
-	@echo "Starting frontend dev server..."
+	@echo "Starting Next.js frontend dev server..."
 	cd frontend && npm run dev
 
 build-frontend:
-	@echo "Building frontend production bundle..."
+	@echo "Building Next.js frontend production bundle..."
 	cd frontend && npm run build
-
-check-frontend:
-	@echo "Checking frontend (format, lint, types, tests, build)..."
-	cd frontend && npm run check
 
 # --- Docker Compose Targets ---
 docker-up:
@@ -101,8 +97,9 @@ clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf backend/bin
 	rm -f backend/server
-	rm -rf frontend/dist
+	rm -rf frontend/.next
 	rm -rf frontend/coverage
+	rm -rf frontend/out
 
 test:
 	@echo "Running backend tests..."
@@ -146,6 +143,9 @@ install-mobile:
 run-mobile:
 	cd mobile && npm start
 
+check-frontend:
+	cd frontend && npm run check
+
 check-mobile:
 	cd mobile && npm run lint && npm run typecheck
 
@@ -183,7 +183,7 @@ check-environments:
 .PHONY: lint format format-check
 lint:
 	cd backend && go vet ./...
-	cd frontend && npm run lint
+	cd frontend && npm run lint -- --max-warnings=0
 	cd mobile && npm run lint -- --max-warnings=0
 	python3 -m ruff check scripts
 

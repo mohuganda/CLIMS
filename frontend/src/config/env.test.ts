@@ -25,7 +25,7 @@ describe('parseConfig', () => {
       expected: 'http://127.0.0.1:8080/api',
     },
   ])('$name', ({ input, expected }) => {
-    expect(parseConfig({ VITE_API_BASE_URL: input }).apiBaseUrl).toBe(expected);
+    expect(parseConfig({ NEXT_PUBLIC_API_BASE_URL: input }).apiBaseUrl).toBe(expected);
   });
 
   it.each([
@@ -35,16 +35,20 @@ describe('parseConfig', () => {
     { name: 'a bare hostname', input: 'api.example.org' },
     { name: 'a javascript URL', input: 'javascript:alert(1)' },
   ])('rejects $name', ({ input }) => {
-    expect(() => parseConfig({ VITE_API_BASE_URL: input })).toThrow(ConfigError);
+    expect(() => parseConfig({ NEXT_PUBLIC_API_BASE_URL: input })).toThrow(ConfigError);
   });
 
   it('names the variable in the error so a deploy log is actionable', () => {
-    expect(() => parseConfig({ VITE_API_BASE_URL: 'nope' })).toThrow(/VITE_API_BASE_URL/);
+    expect(() => parseConfig({ NEXT_PUBLIC_API_BASE_URL: 'nope' })).toThrow(
+      /NEXT_PUBLIC_API_BASE_URL/,
+    );
   });
 
   it('reports a missing maps key as null rather than an empty string', () => {
     expect(parseConfig({}).googleMapsApiKey).toBeNull();
-    expect(parseConfig({ VITE_GOOGLE_MAPS_API_KEY: '  ' }).googleMapsApiKey).toBeNull();
-    expect(parseConfig({ VITE_GOOGLE_MAPS_API_KEY: ' key-123 ' }).googleMapsApiKey).toBe('key-123');
+    expect(parseConfig({ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: '  ' }).googleMapsApiKey).toBeNull();
+    expect(parseConfig({ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ' key-123 ' }).googleMapsApiKey).toBe(
+      'key-123',
+    );
   });
 });

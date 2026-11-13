@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, use, type ReactNode } from 'react';
 
 import type { HttpClient } from './http';
@@ -15,7 +17,6 @@ export function HttpProvider({ client, children }: HttpProviderProps) {
 }
 
 /** The HTTP client for the current tree. Throws when rendered outside an {@link HttpProvider}. */
-// eslint-disable-next-line react-refresh/only-export-components -- the hook and its provider are one unit
 export function useHttp(): HttpClient {
   const client = use(HttpContext);
   if (!client) throw new Error('useHttp must be used inside <HttpProvider>.');

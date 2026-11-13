@@ -1,9 +1,8 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router';
 
-import type { NavGroup } from '@/app/router/navigation';
-import { HOME_PATH } from '@/app/router/paths';
 import { Brand } from '@/components/layout/Brand';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -22,6 +21,8 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
+import type { NavGroup } from '@/navigation/navigation';
+import { HOME_PATH } from '@/navigation/paths';
 
 interface NavGroupSectionProps {
   group: NavGroup;
@@ -89,7 +90,7 @@ function NavGroupSection({ group, pathname }: NavGroupSectionProps) {
                     )}
                   >
                     <Link
-                      to={item.path}
+                      href={item.path}
                       aria-current={isCurrent ? 'page' : undefined}
                       onClick={() => {
                         setOpenMobile(false);
@@ -114,7 +115,7 @@ interface AppSidebarProps {
 
 /** The primary navigation: one collapsible section per workspace. */
 export function AppSidebar({ groups }: AppSidebarProps) {
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const { state, toggleSidebar, isMobile } = useSidebar();
   const isCollapsed = state === 'collapsed' && !isMobile;
 
@@ -122,7 +123,7 @@ export function AppSidebar({ groups }: AppSidebarProps) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="h-16 justify-center border-b px-4 group-data-[collapsible=icon]:px-1.5">
         <Link
-          to={HOME_PATH}
+          href={HOME_PATH}
           className="focus-visible:ring-sidebar-ring rounded-lg outline-none focus-visible:ring-2"
         >
           <Brand compact={isCollapsed} />

@@ -11,7 +11,7 @@ repository.
 
 - **Root cause:** there was no configuration mechanism, so the nearest place to put a value was the
   file that used it.
-- **Now:** configuration is read from `VITE_*` variables and validated in `src/config/env.ts`.
+- **Now:** configuration is read from `NEXT_PUBLIC_*` variables and validated in `src/config/env.ts`.
   `.env.example` states that these values are public and must never hold a secret. A browser key is
   public by nature, so the real control is restricting it by referrer in Google Cloud.
 

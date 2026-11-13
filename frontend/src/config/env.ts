@@ -29,7 +29,7 @@ function parseApiBaseUrl(raw: string | undefined): string {
     url = new URL(value);
   } catch {
     throw new ConfigError(
-      `VITE_API_BASE_URL must be an absolute URL or a path starting with "/", got "${value}".`,
+      `NEXT_PUBLIC_API_BASE_URL must be an absolute URL or a path starting with "/", got "${value}".`,
     );
   }
 
@@ -38,20 +38,20 @@ function parseApiBaseUrl(raw: string | undefined): string {
   const isLoopback = LOOPBACK_HOSTS.has(url.hostname);
   if (url.protocol !== 'https:' && !(url.protocol === 'http:' && isLoopback)) {
     throw new ConfigError(
-      `VITE_API_BASE_URL must use https (http is allowed for localhost only), got "${value}".`,
+      `NEXT_PUBLIC_API_BASE_URL must use https (http is allowed for localhost only), got "${value}".`,
     );
   }
 
   return value.replace(/\/+$/, '');
 }
 
-/** Turns raw `import.meta.env` values into a validated {@link AppConfig}. */
+/** Turns raw `NEXT_PUBLIC_*` values into a validated {@link AppConfig}. */
 export function parseConfig(env: {
-  VITE_API_BASE_URL?: string;
-  VITE_GOOGLE_MAPS_API_KEY?: string;
+  NEXT_PUBLIC_API_BASE_URL?: string;
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?: string;
 }): AppConfig {
   return {
-    apiBaseUrl: parseApiBaseUrl(env.VITE_API_BASE_URL),
-    googleMapsApiKey: env.VITE_GOOGLE_MAPS_API_KEY?.trim() || null,
+    apiBaseUrl: parseApiBaseUrl(env.NEXT_PUBLIC_API_BASE_URL),
+    googleMapsApiKey: env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() || null,
   };
 }

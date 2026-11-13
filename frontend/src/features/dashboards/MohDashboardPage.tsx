@@ -1,3 +1,5 @@
+'use client';
+
 import { Boxes, PackageCheck, UserCheck, UserMinus, Users } from 'lucide-react';
 
 import { SampleBadge } from '@/components/SampleData';

@@ -4,6 +4,7 @@ infra/env/*.env
 backend/bin/
 backend/server
 frontend/node_modules/
+frontend/.next/
 __pycache__/
 mobile/node_modules/
 mobile/.expo/

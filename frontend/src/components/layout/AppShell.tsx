@@ -1,29 +1,30 @@
-import { Suspense, type CSSProperties } from 'react';
-import { Outlet, useLocation } from 'react-router';
+'use client';
 
-import { findNavItem, type NavGroup } from '@/app/router/navigation';
+import { usePathname } from 'next/navigation';
+import type { CSSProperties, ReactNode } from 'react';
+
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { UserMenu } from '@/components/layout/UserMenu';
-import { PageLoader } from '@/components/states/PageLoader';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useStoredBoolean } from '@/hooks/useStoredBoolean';
 import type { StorageLike } from '@/lib/storage/jsonStorage';
+import { findNavItem, type NavGroup } from '@/navigation/navigation';
 
 interface AppShellProps {
   groups: readonly NavGroup[];
   /** Where the sidebar's open/closed preference is remembered. */
   storage: StorageLike;
+  /** The routed page. */
+  children: ReactNode;
 }
 
 /** The signed-in frame: sidebar, header and the routed page. */
-export function AppShell({ groups, storage }: AppShellProps) {
-  const { pathname } = useLocation();
+export function AppShell({ groups, storage, children }: AppShellProps) {
+  const pathname = usePathname();
   const title = findNavItem(groups, pathname)?.title ?? 'Page not found';
   const [isSidebarOpen, setIsSidebarOpen] = useStoredBoolean(storage, 'clims.sidebar-open', true);
-  useDocumentTitle(title);
 
   return (
     <SidebarProvider
@@ -51,11 +52,7 @@ export function AppShell({ groups, storage }: AppShellProps) {
         </header>
         <main id="main" tabIndex={-1} className="flex-1 p-4 outline-none md:p-6">
           <ErrorBoundary resetKey={pathname}>
-            <Suspense fallback={<PageLoader />}>
-              <div className="flex w-full flex-col gap-6">
-                <Outlet />
-              </div>
-            </Suspense>
+            <div className="flex w-full flex-col gap-6">{children}</div>
           </ErrorBoundary>
         </main>
       </SidebarInset>

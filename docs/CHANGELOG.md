@@ -6,8 +6,8 @@ Notable changes to CLIMS. The format follows [Keep a Changelog](https://keepacha
 
 ### Added
 
-- **Web app** in `frontend/`, imported from the `LMD_FE` prototype and rebuilt on React 19, Vite,
-  TypeScript, Tailwind CSS 4 and shadcn/ui, themed after the SalesOps dashboard reference in light
+- **Web app** in `frontend/`, imported from the `LMD_FE` prototype and rebuilt on Next.js 16,
+  React 19, TypeScript, Tailwind CSS 4 and shadcn/ui, themed after the SalesOps dashboard reference in light
   mode with an optional dark theme. Decisions are recorded in `docs/adr/0001-frontend-stack.md`.
 - Sign-in, sign-out and a route guard. Signing out or an expired session in one browser tab signs
   out the others.
@@ -20,15 +20,15 @@ Notable changes to CLIMS. The format follows [Keep a Changelog](https://keepacha
 - Unit and behaviour tests, with coverage enforced at 80% on domain code.
 - ESLint (type-aware, strict, accessibility rules) and Prettier, run in CI with tests and build
   (`.github/workflows/ci.yml`).
-- A production container image for the web app: nginx as a non-root user, health check,
-  long-lived caching of hashed assets, and security headers including a Content-Security-Policy.
+- Security headers on every page, including a Content-Security-Policy that allows no inline
+  script except the ones Next.js writes, each marked with a per-request nonce.
 
 ### Changed
 
-- The frontend is a static single-page app; it replaces the Next.js scaffold added in 2.0.0.
-  `README.md`, `Makefile`, the Compose frontend service, CI, the frontend Dockerfiles and the env
-  examples were updated to match; the scaffold's `BACKEND_URL` rewrites are replaced by
-  `VITE_API_BASE_URL`.
+- The web app takes the place of the Next.js welcome page added in 2.0.0 and keeps its images,
+  Compose services and `BACKEND_URL` rewrites. The frontend CI job also checks formatting, runs
+  the tests with coverage and audits shipped dependencies, and the production image accepts an
+  optional `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` build argument.
 - Screen addresses are consistent and no longer misspelled (for example `/moh/users` instead of
   `/moh/admin/userManagment`).
 - The district "Condom items" link opens the condom catalogue. It previously opened a copy of the

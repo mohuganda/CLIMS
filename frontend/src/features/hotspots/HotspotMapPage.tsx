@@ -1,3 +1,5 @@
+'use client';
+
 import { GoogleMap, InfoWindowF, MarkerF, useJsApiLoader } from '@react-google-maps/api';
 import { MapPinOff } from 'lucide-react';
 import { useState } from 'react';
@@ -99,7 +101,7 @@ export default function HotspotMapPage() {
           <EmptyState
             icon={MapPinOff}
             title="The map is not set up"
-            description="No Google Maps key is configured for this deployment. Ask whoever deploys CLIMS to set VITE_GOOGLE_MAPS_API_KEY."
+            description="No Google Maps key is configured for this deployment. Ask whoever deploys CLIMS to set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY."
           />
         ) : hotspots.isError && !hotspots.data ? (
           <ErrorState

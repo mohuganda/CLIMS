@@ -2,16 +2,16 @@
 
 [Documentation index](README.md)
 
-The web app is a React single-page app with sign-in, user management, condom items, stock, and hotspot screens; see the [web app guide](../frontend/README.md) and the [frontend stack decision](adr/0001-frontend-stack.md). The mobile project is a scaffold with a CLIMS welcome screen and a real API readiness check.
+The web app has sign-in, user management, condom items, stock, and hotspot screens; see the [web app guide](../frontend/README.md) and the [frontend stack decision](adr/0001-frontend-stack.md). The mobile project is a scaffold with a CLIMS welcome screen and a real API readiness check.
 
 ## Projects and toolchains
 
-| Folder      | Project                          | Current baseline                             |
-| ----------- | -------------------------------- | -------------------------------------------- |
-| `frontend/` | Vite single-page app, TypeScript | Vite 8, React 19, Tailwind CSS 4, shadcn/ui  |
-| `mobile/`   | Expo / React Native, TypeScript  | Expo SDK 58, React Native 0.88.1, React 19.3 |
+| Folder      | Project                               | Current baseline                             |
+| ----------- | ------------------------------------- | -------------------------------------------- |
+| `frontend/` | Next.js App Router, TypeScript, React | Next.js 16.4.6, React 19.3                   |
+| `mobile/`   | Expo / React Native, TypeScript       | Expo SDK 58, React Native 0.88.1, React 19.3 |
 
-Use Node.js 22.13+ on the 22.x line (or another version supported by Expo SDK 58) for host development. Docker supplies Node.js 22. With nvm, run `nvm install` and `nvm use` from the repository root; `.nvmrc` selects Node 22. Both projects use npm and committed lockfiles. Keep application documentation in root `docs/`; the generated `mobile/AGENTS.md` file provides tool-specific project instructions.
+Use Node.js 22.13+ on the 22.x line (or another version supported by Expo SDK 58) for host development. Docker supplies Node.js 22. With nvm, run `nvm install` and `nvm use` from the repository root; `.nvmrc` selects Node 22. Both projects use npm and committed lockfiles. Keep application documentation in root `docs/`; the generated `AGENTS.md` files provide tool-specific project instructions.
 
 ## Run the whole stack
 
@@ -31,18 +31,18 @@ On this workstation, use `BUILDX_CONFIG=/tmp/clims-buildx make docker-up` if Doc
 | ------------------- | -------------- | ----------------------------------------- |
 | Nginx HTTP gateway  | 80             | `http://localhost:8080`                   |
 | Nginx Metro gateway | 8081           | `http://localhost:19000`                  |
-| Web app             | 3000           | Internal, through Nginx                   |
+| Next.js             | 3000           | Internal, through Nginx                   |
 | Go API              | 8080           | Internal, through Nginx                   |
 | Expo Metro          | 8081           | Internal, through Nginx                   |
 | PostgreSQL          | 5432           | `localhost:5432` for local database tools |
 
-Nginx routes `/` and the web app's assets to the frontend; `/api`, `/docs`, and `/health` retain their full paths and go to Go. A separate Nginx listener proxies Metro's root paths and WebSocket upgrades. Docker DNS resolution lets the proxy refresh upstream addresses after container recreation.
+Nginx routes `/` and Next.js assets to the frontend; `/api`, `/docs`, and `/health` retain their full paths and go to Go. A separate Nginx listener proxies Metro's root paths and WebSocket upgrades. Docker DNS resolution lets the proxy refresh upstream addresses after container recreation.
 
-The startup sequence waits for PostgreSQL, then the API, then the web app; Nginx waits for the API, frontend, and Metro health checks. The PostgreSQL named volume is preserved. The API is no longer published directly on host port 8080: Nginx owns that port.
+The startup sequence waits for PostgreSQL, then the API, then Next.js; Nginx waits for the API, frontend, and Metro health checks. The PostgreSQL named volume is preserved. The API is no longer published directly on host port 8080: Nginx owns that port.
 
-Development runs the Vite dev server with hot reload, Go with Air, and Expo Metro. Source folders are mounted; dependencies and build caches live in named volumes. Client startup runs `npm ci --prefer-offline` so dependencies follow the committed lockfiles after a restart. Rebuild the relevant image after changing Dockerfiles or toolchains.
+Development runs Next.js with source reloads, Go with Air, and Expo Metro. Source folders are mounted; dependencies and build caches live in named volumes. Client startup runs `npm ci --prefer-offline` so dependencies follow the committed lockfiles after a restart. Rebuild the relevant image after changing Dockerfiles or toolchains.
 
-Production serves the built web app as static files from an unprivileged Nginx container and runs a compiled Go binary. Its mobile Dockerfile exports release JavaScript bundles as an optional job; it runs no Metro server. See [development and production environments](environments.md) for configuration, release artifacts, and commands.
+Production runs a standalone Next.js build and compiled Go binary. Its mobile Dockerfile exports release JavaScript bundles as an optional job; it runs no Metro server. See [development and production environments](environments.md) for configuration, release artifacts, and commands.
 
 ## Web development
 
@@ -51,9 +51,9 @@ make install-frontend
 make run-frontend
 ```
 
-Open `http://localhost:3000`. Copy `frontend/.env.example` to `frontend/.env.local`; the Vite dev server forwards `/api` to `VITE_DEV_API_PROXY_TARGET`, or use the mock API in `frontend/dev/` to work without a backend. Browser API calls use the relative `VITE_API_BASE_URL` (`/api`). `VITE_*` values are compiled into the public bundle, so they must never hold secrets. The screens call endpoints the Go API does not serve yet; the [web app guide](../frontend/README.md) lists them.
+Open `http://localhost:3000`. Next.js rewrites `/api`, `/docs`, and `/health` to `BACKEND_URL`, defaulting to the Nginx gateway at `http://localhost:8080`. Copy `frontend/.env.example` to `frontend/.env.local` to change it, or point it at the mock API in `frontend/dev/` to work without a backend. Browser API calls use relative paths; no private database credentials are bundled into the client. `NEXT_PUBLIC_*` values are compiled into the public bundle, so they must never hold secrets. The screens call endpoints the Go API does not serve yet; the [web app guide](../frontend/README.md) lists them.
 
-The development Compose override uses `infra/docker/frontend/Dockerfile.dev`; production uses `Dockerfile.prod`, which builds with `frontend/` as its context and serves the result with the Nginx configuration in `frontend/nginx/`. `make check-frontend` runs formatting, lint, types, tests with coverage, and the build.
+The development Compose override uses `infra/docker/frontend/Dockerfile.dev`; production uses `Dockerfile.prod`. The web app bundles its font and does not download Google Fonts. `make check-frontend` runs formatting, lint, types, tests with coverage, and the build.
 
 ```sh
 make check-frontend
@@ -92,7 +92,7 @@ cd mobile && npm run export
 
 The export compiles JavaScript bundles for iOS and Android. It does not sign an app, create an APK/IPA, or verify rendering on a device. Native projects are generated by Expo tooling when needed; do not hand-create `ios/` or `android/` folders.
 
-References: [Vite guide](https://vite.dev/guide/), [Expo SDK 58](https://docs.expo.dev/versions/v58.0.0/), and [Expo proxy URL configuration](https://docs.expo.dev/more/expo-cli/#server-url).
+References: [Next.js installation](https://nextjs.org/docs/app/getting-started/installation), [Expo SDK 58](https://docs.expo.dev/versions/v58.0.0/), and [Expo proxy URL configuration](https://docs.expo.dev/more/expo-cli/#server-url).
 
 ## Dependency audit note
 

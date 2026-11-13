@@ -1,7 +1,7 @@
 # ADR 0001: Frontend stack and how the prototype was imported
 
 - **Status:** Accepted
-- **Date:** 2026-11-12
+- **Date:** 2026-11-12, revised 2026-11-14 (decision 1)
 - **Applies to:** `frontend/`
 
 ## Context
@@ -27,17 +27,32 @@ This repository's README, Dockerfile and Makefile, written before the import, as
 frontend. Its Go backend serves `/api/v1/auth` only.
 
 While this work was in review, release 2.0.0 added a Next.js scaffold to `frontend/`: a welcome
-page with an API readiness check, plus development and production images, Compose overrides and CI
-built around it. The import replaces that scaffold and keeps the surrounding structure.
+page with an API readiness check, plus development and production images, Compose overrides, CI
+and an image release pipeline built around it.
 
 ## Decisions
 
-### 1. Keep it a Vite single-page app; do not port to Next.js
+### 1. Build on Next.js, the framework the repository already uses
 
-The app is entirely behind a sign-in and has no content for search engines, so server rendering
-buys nothing, while a port would be a rewrite of routing and data loading for no user-visible gain.
-The container, compose file, Makefile and README were changed to match a static SPA served by
-nginx. Porting later remains possible: components, API layer and tests are framework-agnostic.
+The first version of this decision kept the prototype's Vite single-page app, because the app is
+entirely behind a sign-in and server rendering buys it little. It was reversed once release 2.0.0
+had standardised on Next.js: keeping Vite meant replacing that release's frontend images, Compose
+services, CI job and documentation with a second way of doing each. The app is now a Next.js 16
+App Router project in the place of the scaffold, and the infrastructure around it is unchanged
+apart from two build settings.
+
+What that means in practice:
+
+- Every screen is a `page.tsx` under `src/app`, and a layout puts the signed-in ones behind the
+  guard and inside the shell. React Router is gone.
+- The screens are client components. The session is a bearer token in the browser's storage, so
+  the server cannot know who is signed in; it sends the document, the page title and a loader, and
+  the app starts in the browser. Server-rendering the screens needs the session in a cookie, which
+  is a backend change (see Consequences).
+- The Content-Security-Policy allows no inline script except the ones Next.js writes, which carry
+  a nonce that is new for every request. A nonce cannot be built ahead of time, so every page is
+  rendered on request rather than at build.
+- Components, the API layer and the tests did not change: they never depended on the bundler.
 
 ### 2. Rebuild the UI on shadcn/ui and Tailwind 4, not restyle Ant Design
 
@@ -73,7 +88,7 @@ a set of unlinked duplicate pages.
 
 ### 6. Dependencies are created at the composition root
 
-The store, HTTP client, query client and storage are built in `main.tsx` and passed down through
+The store, HTTP client, query client and storage are built in `src/providers/AppRoot.tsx` and passed down through
 providers. There is no module-level store or client. This is what lets each test construct its own
 isolated app (`src/test/renderApp.tsx`).
 
@@ -91,6 +106,13 @@ isolated app (`src/test/renderApp.tsx`).
   reload and cannot be linked to.
 
 ## Alternatives considered
+
+- **Keep the Vite single-page app and replace the Next.js scaffold.** This was the first version
+  of decision 1. Rejected on review: it works, but it leaves the repository's images, Compose
+  files, CI and release tooling to be rewritten around a second frontend stack.
+- **Mount the existing React Router app inside one catch-all Next.js route.** Rejected: it is the
+  quickest port, but the result is Next.js in name only, with none of its routing, metadata or
+  code splitting, and two routers to reason about.
 
 - **`git subtree` to preserve history.** Rejected: nearly every file is replaced, so the history
   would describe code that no longer exists, and it would import a committed credential.

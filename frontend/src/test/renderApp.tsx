@@ -1,17 +1,17 @@
 import { render } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { MemoryRouter } from 'react-router';
 import { vi } from 'vitest';
 
-import { AppProviders } from '@/app/AppProviders';
 import { selectToken, sessionEnded } from '@/features/auth/authSlice';
 import { createSessionStore, type Session } from '@/features/auth/session';
 import { createHttpClient } from '@/lib/api';
 import { createQueryClient } from '@/lib/query/queryClient';
 import { createMemoryStorage } from '@/lib/storage/jsonStorage';
+import { AppProviders } from '@/providers/AppProviders';
 import { createAppStore } from '@/store/store';
 
 import { createFakeAdapter } from './fakeAdapter';
+import { testRouter } from './navigation';
 
 export const testSession: Session = {
   token: 'test-token',
@@ -35,13 +35,15 @@ interface RenderAppOptions {
 }
 
 /**
- * Renders `ui` inside the real provider stack, wired exactly as `main.tsx`
- * wires it, but against in-memory storage and a scripted network.
+ * Renders `ui` inside the real provider stack, wired exactly as `AppRoot`
+ * wires it, but against in-memory storage, a scripted network and the test
+ * router, which starts at `route`.
  */
 export function renderApp(
   ui: ReactNode,
   { route = '/', signedIn = false, replies = [{ status: 200, body: [] }] }: RenderAppOptions = {},
 ) {
+  testRouter.reset(route);
   const storage = createMemoryStorage(
     signedIn ? { 'clims.session': JSON.stringify(testSession) } : {},
   );
@@ -64,7 +66,7 @@ export function renderApp(
       http={http}
       storage={storage}
     >
-      <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+      {ui}
     </AppProviders>,
   );
 

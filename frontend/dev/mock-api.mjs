@@ -7,7 +7,10 @@
  *   MOCK_DATA=empty npm run mock-api # nothing recorded yet
  *
  * Then, in another terminal:
- *   VITE_DEV_API_PROXY_TARGET=http://127.0.0.1:8787 npm run dev
+ *   BACKEND_URL=http://127.0.0.1:8787 npm run dev
+ *
+ * The dev server forwards /api/* here with the path unchanged, as the Nginx
+ * gateway does for the real API, so the /api prefix is accepted and ignored.
  *
  * Sign in with any username; the password "wrong" is rejected, anything else
  * is accepted. MOCK_FAIL=<resource> (e.g. `users`) makes that resource return
@@ -325,7 +328,8 @@ async function readJson(request) {
 
 const server = http.createServer(async (request, response) => {
   const body = await readJson(request).catch(() => ({}));
-  const [, resource = '', id] = new URL(request.url ?? '/', 'http://mock').pathname.split('/');
+  const { pathname } = new URL(request.url ?? '/', 'http://mock');
+  const [, resource = '', id] = pathname.replace(/^\/api(?=\/|$)/, '').split('/');
   await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
 
   if (process.env.MOCK_FAIL === resource) {

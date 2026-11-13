@@ -1,3 +1,5 @@
+'use client';
+
 import { Boxes, PackageCheck, PackagePlus } from 'lucide-react';
 
 import { SampleDataNotice } from '@/components/SampleData';

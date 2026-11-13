@@ -2,9 +2,11 @@
 node_modules
 
 # Build and test output
-dist
+.next
+out
 coverage
 *.tsbuildinfo
+next-env.d.ts
 
 # Local environment: real values never go in git. `.env.example` is the template.
 .env

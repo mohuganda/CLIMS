@@ -1,3 +1,5 @@
+'use client';
+
 import { PendingTable } from '@/components/data-table/PendingTable';
 import { PageHeader } from '@/components/PageHeader';
 import { SampleDataNotice } from '@/components/SampleData';

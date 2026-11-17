@@ -1,6 +1,6 @@
 /** Build-time configuration, validated once so a bad value fails at startup instead of mid-session. */
 export interface AppConfig {
-  /** Absolute `https://…` URL or a same-origin path such as `/api`. Never ends in a slash. */
+  /** Absolute `https://…` URL or a same-origin path such as `/api/v1`. Never ends in a slash. */
   readonly apiBaseUrl: string;
   /** `null` when no browser key is configured; the map page degrades to a notice. */
   readonly googleMapsApiKey: string | null;
@@ -14,7 +14,8 @@ export class ConfigError extends Error {
   }
 }
 
-const DEFAULT_API_BASE_URL = '/api';
+// Every route of the Go API lives under /api/v1.
+const DEFAULT_API_BASE_URL = '/api/v1';
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 function parseApiBaseUrl(raw: string | undefined): string {

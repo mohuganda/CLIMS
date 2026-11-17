@@ -8,7 +8,7 @@ WORKDIR /app
 ARG VERSION
 # NEXT_PUBLIC_* values are compiled into the public JavaScript bundle. They
 # configure the app; they are not secrets and must never be given one.
-ARG NEXT_PUBLIC_API_BASE_URL=/api
+ARG NEXT_PUBLIC_API_BASE_URL=/api/v1
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV BACKEND_URL=http://backend:8080

@@ -28,3 +28,20 @@ export const optionalNumber = z
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
   });
+
+/**
+ * A role as one label. The Go API sends `{ id, name, permissions }`; older
+ * APIs send a role name or a numeric id. Missing or blank becomes `null`.
+ */
+export const roleSchema = z
+  .union([
+    z.string(),
+    z.number(),
+    z.object({ id: z.unknown().optional(), name: z.string().nullish() }),
+  ])
+  .nullish()
+  .transform((role) => {
+    if (role === null || role === undefined) return null;
+    const label = typeof role === 'object' ? (role.name ?? '') : String(role);
+    return label.trim() === '' ? null : label.trim();
+  });

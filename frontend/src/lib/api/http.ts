@@ -48,6 +48,17 @@ function readEnvelopeStatus(body: unknown): number | null {
   return Number.isInteger(status) && status >= 100 && status <= 599 ? status : null;
 }
 
+/**
+ * The Go API wraps every body as `{ "success": true, "data": … }`. Features
+ * only care about `data`, so it is unwrapped here. Bodies without that
+ * envelope (the mock API, legacy endpoints) pass through unchanged.
+ */
+function unwrapEnvelope(body: unknown): unknown {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) return body;
+  const record = body as { success?: unknown; data?: unknown };
+  return record.success === true && 'data' in record ? record.data : body;
+}
+
 /** Creates the app's HTTP client. Holds no state of its own beyond its options. */
 export function createHttpClient({
   baseUrl,
@@ -84,7 +95,7 @@ export function createHttpClient({
       if (envelopeStatus !== null && envelopeStatus >= 400) {
         throw errorFromResponse(envelopeStatus, response.data);
       }
-      return response.data;
+      return unwrapEnvelope(response.data);
     } catch (error) {
       const apiError = toApiError(error);
       if (apiError.kind === 'unauthorized' && !anonymous) onUnauthorized();

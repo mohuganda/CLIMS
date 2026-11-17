@@ -10,9 +10,9 @@
  *   BACKEND_URL=http://127.0.0.1:8787 npm run dev
  *
  * The dev server forwards /api/* here with the path unchanged, as the Nginx
- * gateway does for the real API, so the /api prefix is accepted and ignored.
+ * gateway does for the real API, so the /api/v1 prefix is accepted and ignored.
  *
- * Sign in with any username; the password "wrong" is rejected, anything else
+ * Sign in with any email; the password "wrong" is rejected, anything else
  * is accepted. MOCK_FAIL=<resource> (e.g. `users`) makes that resource return
  * a 500 so error states can be looked at. MOCK_DELAY sets latency in ms.
  *
@@ -329,7 +329,7 @@ async function readJson(request) {
 const server = http.createServer(async (request, response) => {
   const body = await readJson(request).catch(() => ({}));
   const { pathname } = new URL(request.url ?? '/', 'http://mock');
-  const [, resource = '', id] = pathname.replace(/^\/api(?=\/|$)/, '').split('/');
+  const [, resource = '', id] = pathname.replace(/^\/api(?:\/v1)?(?=\/|$)/, '').split('/');
   await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
 
   if (process.env.MOCK_FAIL === resource) {
@@ -338,24 +338,30 @@ const server = http.createServer(async (request, response) => {
     });
   }
 
-  if (resource === 'login' && request.method === 'POST') {
+  // Same shape as the Go API's POST /api/v1/auth/login.
+  if (resource === 'auth' && id === 'login' && request.method === 'POST') {
     if (body.password === 'wrong') {
-      return send(response, 200, { code: '401', message: 'Invalid username or password' });
+      return send(response, 401, { success: false, message: 'invalid credentials' });
     }
     return send(response, 200, {
-      code: '200',
-      token: TOKEN,
-      user: {
-        id: 1,
-        username: body.username,
-        firstname: 'Sarah',
-        lastname: 'Nakato',
-        role: 'Admin',
-        email: 'sarah@example.org',
+      success: true,
+      message: 'login successful',
+      data: {
+        token: TOKEN,
+        token_type: 'Bearer',
+        expires_in: 86400,
+        user: {
+          id: 1,
+          username: 'sarah.nakato',
+          firstname: 'Sarah',
+          lastname: 'Nakato',
+          email: body.email,
+          status: 'active',
+          role: { id: 1, name: 'admin', permissions: [] },
+        },
       },
     });
   }
-  if (resource === 'logout') return send(response, 200, { code: '200' });
   if (request.headers.authorization !== `Bearer ${TOKEN}`) {
     return send(response, 401, { message: 'Unauthenticated.' });
   }

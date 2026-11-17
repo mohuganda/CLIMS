@@ -5,4 +5,4 @@ export type { HttpClient, HttpClientOptions, RequestOptions } from './http';
 export { HttpProvider, useHttp } from './HttpProvider';
 export { parseBody, parseList } from './parse';
 export { useApiQuery } from './useApiQuery';
-export { idSchema, optionalNumber, optionalText } from './schema';
+export { idSchema, optionalNumber, optionalText, roleSchema } from './schema';

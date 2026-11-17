@@ -1,6 +1,13 @@
 import { z } from 'zod';
 
-import { idSchema, optionalNumber, optionalText, parseList, type HttpClient } from '@/lib/api';
+import {
+  idSchema,
+  optionalNumber,
+  optionalText,
+  parseList,
+  roleSchema,
+  type HttpClient,
+} from '@/lib/api';
 
 const userSchema = z.object({
   id: idSchema,
@@ -8,7 +15,7 @@ const userSchema = z.object({
   firstname: optionalText,
   lastname: optionalText,
   email: optionalText,
-  role: optionalText,
+  role: roleSchema,
   status: optionalText,
   location: optionalText,
   phone_number: optionalText,
@@ -33,7 +40,10 @@ export interface UserInput {
 }
 
 export async function listUsers(http: HttpClient, signal?: AbortSignal): Promise<User[]> {
-  return parseList(userSchema, await http.get('/users', { signal }), 'users');
+  const body = await http.get('/users', { signal });
+  // The Go API pages the list as `{ users, limit, offset }`.
+  const list = typeof body === 'object' && body !== null && 'users' in body ? body.users : body;
+  return parseList(userSchema, list, 'users');
 }
 
 export async function createUser(http: HttpClient, input: UserInput): Promise<void> {

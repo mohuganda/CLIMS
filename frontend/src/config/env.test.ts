@@ -4,8 +4,8 @@ import { ConfigError, parseConfig } from './env';
 
 describe('parseConfig', () => {
   it.each([
-    { name: 'defaults to the same-origin proxy path', input: undefined, expected: '/api' },
-    { name: 'treats blank as unset', input: '   ', expected: '/api' },
+    { name: 'defaults to the same-origin proxy path', input: undefined, expected: '/api/v1' },
+    { name: 'treats blank as unset', input: '   ', expected: '/api/v1' },
     { name: 'keeps a relative path', input: '/backend/api', expected: '/backend/api' },
     { name: 'strips trailing slashes from a path', input: '/api///', expected: '/api' },
     { name: 'keeps a bare root path', input: '/', expected: '/' },

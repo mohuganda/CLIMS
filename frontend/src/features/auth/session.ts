@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { roleSchema } from '@/lib/api/schema';
 import { readJson, removeKey, writeJson, type StorageLike } from '@/lib/storage/jsonStorage';
 
 /**
@@ -9,11 +10,8 @@ import { readJson, removeKey, writeJson, type StorageLike } from '@/lib/storage/
 export const authUserSchema = z.object({
   id: z.coerce.number().int(),
   username: z.string().min(1),
-  // The API sends a role name on some deployments and a role id on others.
-  role: z
-    .union([z.string(), z.number()])
-    .nullish()
-    .transform((role) => (role === null || role === undefined ? null : String(role))),
+  // The Go API sends `{ id, name, permissions }`; older APIs a name or an id.
+  role: roleSchema,
   firstname: z.string().nullish().default(null),
   lastname: z.string().nullish().default(null),
   email: z.string().nullish().default(null),

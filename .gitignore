@@ -18,3 +18,4 @@ artifacts/
 node_modules/
 .venv/
 .ruff_cache/
+.idea/

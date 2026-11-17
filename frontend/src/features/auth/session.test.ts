@@ -22,6 +22,14 @@ describe('sessionSchema', () => {
     expect(parsed.user).toMatchObject({ id: 12, role: '3', firstname: null, email: null });
   });
 
+  it('reads the role name from the Go API role object', () => {
+    const parsed = sessionSchema.parse({
+      token: 't',
+      user: { id: 1, username: 'admin', role: { id: 1, name: 'admin', permissions: [] } },
+    });
+    expect(parsed.user.role).toBe('admin');
+  });
+
   it('accepts a user with no role', () => {
     expect(
       sessionSchema.parse({ token: 't', user: { id: 1, username: 'u' } }).user.role,

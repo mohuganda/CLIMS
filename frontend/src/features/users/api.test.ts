@@ -36,6 +36,36 @@ const input: UserInput = {
 };
 
 describe('listUsers', () => {
+  it('reads the paged Go API envelope and the role object', async () => {
+    const { http } = setup({
+      status: 200,
+      body: {
+        success: true,
+        message: 'users retrieved',
+        data: {
+          limit: 50,
+          offset: 0,
+          users: [
+            {
+              id: 1,
+              username: 'admin',
+              email: 'admin@example.org',
+              firstname: '',
+              lastname: '',
+              phone_number: '',
+              status: 'active',
+              role: { id: 1, name: 'admin', permissions: ['users:read'] },
+            },
+          ],
+        },
+      },
+    });
+
+    const users = await listUsers(http);
+    expect(users).toHaveLength(1);
+    expect(users[0]).toMatchObject({ id: 1, username: 'admin', role: 'admin', status: 'active' });
+  });
+
   it('normalises loosely typed fields', async () => {
     const { http } = setup({
       status: 200,

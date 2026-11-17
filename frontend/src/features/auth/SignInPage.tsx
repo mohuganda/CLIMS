@@ -17,7 +17,12 @@ import { getErrorMessage } from '@/lib/api';
 import { useSignIn } from './hooks';
 
 const credentialsSchema = z.object({
-  username: z.string().trim().min(1, 'Enter your username.').max(100),
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Enter your email address.')
+    .max(255)
+    .pipe(z.email('Enter a valid email address.')),
   // Not trimmed: a password may legitimately begin or end with a space.
   password: z.string().min(1, 'Enter your password.').max(200),
 });
@@ -34,7 +39,7 @@ export default function SignInPage() {
     formState: { errors },
   } = useForm<CredentialsForm>({
     resolver: zodResolver(credentialsSchema),
-    defaultValues: { username: '', password: '' },
+    defaultValues: { email: '', password: '' },
   });
 
   return (
@@ -64,18 +69,19 @@ export default function SignInPage() {
                 </Alert>
               ) : null}
 
-              <Field data-invalid={errors.username ? true : undefined}>
-                <FieldLabel htmlFor="username">Username</FieldLabel>
+              <Field data-invalid={errors.email ? true : undefined}>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
-                  id="username"
+                  id="email"
+                  type="email"
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  aria-invalid={errors.username ? true : undefined}
-                  aria-describedby={errors.username ? 'username-error' : undefined}
-                  {...register('username')}
+                  aria-invalid={errors.email ? true : undefined}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
+                  {...register('email')}
                 />
-                <FieldError id="username-error" errors={[errors.username]} />
+                <FieldError id="email-error" errors={[errors.email]} />
               </Field>
 
               <Field data-invalid={errors.password ? true : undefined}>

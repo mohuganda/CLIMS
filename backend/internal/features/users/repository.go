@@ -88,6 +88,12 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*User, e
 	return scanUser(r.DB.QueryRow(ctx, userSelect+`WHERE lower(btrim(u.email))=lower(btrim($1))`, email))
 }
 
+// FindByOIDCIdentity resolves an existing link using the verified issuer and subject.
+func (r *Repository) FindByOIDCIdentity(ctx context.Context, issuer, subject string) (*User, error) {
+	return scanUser(r.DB.QueryRow(ctx, userSelect+`JOIN user_oidc_identities identity ON identity.user_id = u.id
+		WHERE identity.issuer = $1 AND identity.subject = $2`, issuer, subject))
+}
+
 // MaxLoginMatches bounds how many accounts one identifier may match before the password is checked,
 // since each check costs a bcrypt comparison.
 const MaxLoginMatches = 10

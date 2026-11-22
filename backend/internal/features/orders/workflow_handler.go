@@ -267,6 +267,7 @@ func validActionInput(action string, input *ActionInput) bool {
 	}
 	if (input.QuantityReceived != nil) != (action == "receive") ||
 		(input.QuantityIssued != nil && (action != "dispatch" || *input.QuantityIssued < 1)) ||
+		(input.QuantityApproved != nil && (action != "review" || *input.QuantityApproved < 1)) ||
 		(input.DiscrepancyNote != nil && action != "receive") {
 		return false
 	}

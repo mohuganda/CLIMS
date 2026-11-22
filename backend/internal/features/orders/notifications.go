@@ -64,9 +64,9 @@ func (r *Repository) record(ctx context.Context, tx pgx.Tx, order Order, actorID
 	// The notify columns keep the deprecated /orders/notifications inbox working until
 	// clients use the central one.
 	var eventID string
-	if err := tx.QueryRow(ctx, `INSERT INTO order_events (order_id, actor_id, action, status, notify_store_id)
-		VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-		order.ID, actorID, action, order.Status, notifyStore).Scan(&eventID); err != nil {
+	if err := tx.QueryRow(ctx, `INSERT INTO order_events (order_id, actor_id, action, status, notify_store_id, quantity)
+		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+		order.ID, actorID, action, order.Status, notifyStore, quantityFor(order, action)).Scan(&eventID); err != nil {
 		return err
 	}
 	typeName, permission, notifies := notification(action)
@@ -102,10 +102,12 @@ func (r *Repository) record(ctx context.Context, tx pgx.Tx, order Order, actorID
 	})
 }
 
-// quantityFor is the quantity a step is about: ordered, issued or counted on arrival.
+// quantityFor is the quantity a step is about: ordered, approved, issued or counted on arrival.
 func quantityFor(order Order, action string) int32 {
 	value := order.QuantityNeeded
 	switch action {
+	case "review":
+		value = order.QuantityApproved
 	case "dispatch":
 		value = order.QuantityIssued
 	case "receive":

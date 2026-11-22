@@ -25,6 +25,8 @@ var (
 // ActionInput carries the details a workflow step needs: an optional smaller quantity at dispatch,
 // and the counted quantity (with a note when it differs) at receipt.
 type ActionInput struct {
+	// QuantityApproved lets the warehouse approve less than requested at review.
+	QuantityApproved *int32  `json:"quantity_approved"`
 	QuantityReceived *int32  `json:"quantity_received"`
 	QuantityIssued   *int32  `json:"quantity_issued"`
 	DiscrepancyNote  *string `json:"discrepancy_note"`
@@ -146,6 +148,15 @@ func (r *Repository) transition(ctx context.Context, tx pgx.Tx, order Order, act
 		if order.Status != "queued" && order.Status != "on_hold" {
 			return Order{}, errWorkflowConflict
 		}
+		// The warehouse approves the request as made or a smaller quantity; the request is kept.
+		approved := *order.QuantityNeeded
+		if input.QuantityApproved != nil {
+			if *input.QuantityApproved > approved {
+				return Order{}, errWorkflowInput
+			}
+			approved = *input.QuantityApproved
+		}
+		order.QuantityApproved = &approved
 		next = "reviewed"
 	case "check-stock":
 		// A held request is rechecked directly once stock arrives.
@@ -165,7 +176,7 @@ func (r *Repository) transition(ctx context.Context, tx pgx.Tx, order Order, act
 		if order.Status != "confirmed" {
 			return Order{}, errWorkflowConflict
 		}
-		quantity := *order.QuantityNeeded
+		quantity := approvedQuantity(order)
 		if input.QuantityIssued != nil {
 			if *input.QuantityIssued > quantity {
 				return Order{}, errWorkflowInput
@@ -177,7 +188,7 @@ func (r *Repository) transition(ctx context.Context, tx pgx.Tx, order Order, act
 			SET on_hand = on_hand - $5, reserved = reserved - $4, updated_at = CURRENT_TIMESTAMP
 			WHERE store_id = $1 AND condom_id = $2 AND unit_of_measure_id = $3 AND reserved >= $4
 			RETURNING on_hand`,
-			order.OrderedFromStoreID, order.CondomID, order.UnitOfMeasureID, *order.QuantityNeeded, quantity).Scan(&onHand)
+			order.OrderedFromStoreID, order.CondomID, order.UnitOfMeasureID, approvedQuantity(order), quantity).Scan(&onHand)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Order{}, errWorkflowConflict
 		}
@@ -220,9 +231,9 @@ func (r *Repository) transition(ctx context.Context, tx pgx.Tx, order Order, act
 		next = "received"
 	}
 	result, err := scanOrder(tx.QueryRow(ctx, `UPDATE orders SET order_status = $2, quantity_issued = $3,
-		handled_by_id = $4, quantity_received = $5, discrepancy_note = $6, updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1 RETURNING `+columns, order.ID, next, order.QuantityIssued, order.HandledByID,
-		order.QuantityReceived, order.DiscrepancyNote))
+		handled_by_id = $4, quantity_received = $5, discrepancy_note = $6, quantity_approved = $7,
+		updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING `+columns, order.ID, next, order.QuantityIssued,
+		order.HandledByID, order.QuantityReceived, order.DiscrepancyNote, order.QuantityApproved))
 	if err != nil {
 		return Order{}, err
 	}
@@ -244,8 +255,17 @@ func reserve(ctx context.Context, tx pgx.Tx, order Order) (bool, error) {
 		SET reserved = reserved + $4, updated_at = CURRENT_TIMESTAMP
 		WHERE store_id = $1 AND condom_id = $2 AND unit_of_measure_id = $3
 			AND on_hand - reserved >= $4`, order.OrderedFromStoreID, order.CondomID,
-		order.UnitOfMeasureID, order.QuantityNeeded)
+		order.UnitOfMeasureID, approvedQuantity(order))
 	return tag.RowsAffected() == 1, err
+}
+
+// approvedQuantity is the quantity the warehouse approved, or the request for orders reviewed
+// before approval was recorded.
+func approvedQuantity(order Order) int32 {
+	if order.QuantityApproved != nil {
+		return *order.QuantityApproved
+	}
+	return *order.QuantityNeeded
 }
 
 type Event struct {

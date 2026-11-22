@@ -12,15 +12,17 @@ import (
 )
 
 type Order struct {
-	HotSpotID          *string   `json:"hot_spot_id"`
-	ParentOrderID      *string   `json:"parent_order_id"`
-	RiderID            *string   `json:"rider_id"`
-	QuantityReceived   *int32    `json:"quantity_received"`
-	DiscrepancyNote    *string   `json:"discrepancy_note"`
-	DeliveryNote       *string   `json:"delivery_note"`
-	ID                 string    `json:"id"`
-	CondomID           string    `json:"condom_id"`
-	QuantityNeeded     *int32    `json:"quantity_needed"`
+	HotSpotID        *string `json:"hot_spot_id"`
+	ParentOrderID    *string `json:"parent_order_id"`
+	RiderID          *string `json:"rider_id"`
+	QuantityReceived *int32  `json:"quantity_received"`
+	DiscrepancyNote  *string `json:"discrepancy_note"`
+	DeliveryNote     *string `json:"delivery_note"`
+	ID               string  `json:"id"`
+	CondomID         string  `json:"condom_id"`
+	QuantityNeeded   *int32  `json:"quantity_needed"`
+	// QuantityApproved is what the warehouse approved at review; the request keeps QuantityNeeded.
+	QuantityApproved   *int32    `json:"quantity_approved"`
 	QuantityIssued     *int32    `json:"quantity_issued"`
 	Status             string    `json:"order_status"`
 	Date               string    `json:"order_date"`
@@ -56,7 +58,7 @@ func NewRepository(db *pgxpool.Pool, notifier notifications.Notifier) *Repositor
 const columns = `id, condom_id, quantity_needed, quantity_issued, order_status,
 to_char(order_date, 'YYYY-MM-DD'), ordered_by_id, handled_by_id, ordered_for_store_id,
 ordered_from_store_id, unit_of_measure_id, comment, created_at, updated_at,
-hot_spot_id, parent_order_id, rider_id, quantity_received, discrepancy_note, delivery_note`
+hot_spot_id, parent_order_id, rider_id, quantity_received, discrepancy_note, delivery_note, quantity_approved`
 
 func scanOrder(row pgx.Row) (Order, error) {
 	var order Order
@@ -64,7 +66,8 @@ func scanOrder(row pgx.Row) (Order, error) {
 		&order.Status, &order.Date, &order.OrderedByID, &order.HandledByID,
 		&order.OrderedForStoreID, &order.OrderedFromStoreID, &order.UnitOfMeasureID,
 		&order.Comment, &order.CreatedAt, &order.UpdatedAt, &order.HotSpotID,
-		&order.ParentOrderID, &order.RiderID, &order.QuantityReceived, &order.DiscrepancyNote, &order.DeliveryNote)
+		&order.ParentOrderID, &order.RiderID, &order.QuantityReceived, &order.DiscrepancyNote, &order.DeliveryNote,
+		&order.QuantityApproved)
 	return order, err
 }
 

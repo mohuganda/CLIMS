@@ -24,6 +24,84 @@ func RegisterRoutes(router fiber.Router, repo *Repository, jwt, activeUser fiber
 	group := router.Group("/reports", jwt, activeUser, rbac.RequirePermission("reports:read"))
 	group.Get("/notifications", h.notificationSummary)
 	group.Get("/notifications/records", h.notificationRecords)
+	group.Get("/warehouse-requests", h.supply)
+	group.Get("/warehouse-requests/records", h.supplyRecords)
+	group.Get("/stock", h.stock)
+}
+
+// supplyFilter reads the period and category as the notification reports do, plus the store filters.
+func (h *Handler) supplyFilter(c fiber.Ctx) (SupplyFilter, scope, error) {
+	base, err := ParseFilter(c.Query("from"), c.Query("to"), c.Query("category"), "7", "80", h.now())
+	if err != nil {
+		return SupplyFilter{}, scope{}, err
+	}
+	f := SupplyFilter{Filter: base, StoreType: c.Query("store_type")}
+	if f.StoreType != "" && f.StoreType != "national" && f.StoreType != "district" {
+		return SupplyFilter{}, scope{}, errors.New("store_type must be national or district")
+	}
+	for name, dst := range map[string]**string{"district_id": &f.DistrictID, "warehouse_store_id": &f.WarehouseID, "store_id": &f.StoreID} {
+		if raw := c.Query(name); raw != "" {
+			id, err := request.ParseUUID(raw)
+			if err != nil {
+				return SupplyFilter{}, scope{}, errors.New(name + " must be a UUID")
+			}
+			*dst = &id
+		}
+	}
+	s, err := h.repo.scopeFor(c.Context(), users.CurrentUser(c))
+	return f, s, err
+}
+
+func (h *Handler) supply(c fiber.Ctx) error {
+	f, s, err := h.supplyFilter(c)
+	if err != nil {
+		return response.Error(c, 400, err.Error(), nil)
+	}
+	report, err := h.repo.supplyReport(c.Context(), s, f, h.now())
+	if err != nil {
+		slog.Error("warehouse request report failed", "error", err)
+		return response.Error(c, 500, "the report could not be calculated", nil)
+	}
+	return response.Success(c, 200, "", report)
+}
+
+func (h *Handler) supplyRecords(c fiber.Ctx) error {
+	f, s, err := h.supplyFilter(c)
+	if err != nil {
+		return response.Error(c, 400, err.Error(), nil)
+	}
+	if f.Limit, f.Offset, err = page(c); err != nil {
+		return response.Error(c, 400, err.Error(), nil)
+	}
+	records, err := h.repo.requestRecords(c.Context(), s, f)
+	if err != nil {
+		slog.Error("warehouse request records failed", "error", err)
+		return response.Error(c, 500, "the records could not be loaded", nil)
+	}
+	return response.Success(c, 200, "", records)
+}
+
+func (h *Handler) stock(c fiber.Ctx) error {
+	f, s, err := h.supplyFilter(c)
+	if err != nil {
+		return response.Error(c, 400, err.Error(), nil)
+	}
+	report, err := h.repo.stockReport(c.Context(), s, f, h.now())
+	if err != nil {
+		slog.Error("stock report failed", "error", err)
+		return response.Error(c, 500, "the report could not be calculated", nil)
+	}
+	return response.Success(c, 200, "", report)
+}
+
+// page reads a list's limit (default 50, at most 100) and offset (default 0).
+func page(c fiber.Ctx) (int32, int32, error) {
+	limit, limitErr := strconv.ParseInt(c.Query("limit", "50"), 10, 32)
+	offset, offsetErr := strconv.ParseInt(c.Query("offset", "0"), 10, 32)
+	if limitErr != nil || offsetErr != nil || limit < 1 || limit > 100 || offset < 0 {
+		return 0, 0, errors.New("limit must be between 1 and 100 and offset must be nonnegative")
+	}
+	return int32(limit), int32(offset), nil
 }
 
 func (h *Handler) notificationSummary(c fiber.Ctx) error {
@@ -50,12 +128,9 @@ func (h *Handler) notificationRecords(c fiber.Ctx) error {
 	default:
 		return response.Error(c, 400, "status must be fulfilled, partly_received, awaiting_acknowledgement or awaiting_supply", nil)
 	}
-	limit, limitErr := strconv.ParseInt(c.Query("limit", "50"), 10, 32)
-	offset, offsetErr := strconv.ParseInt(c.Query("offset", "0"), 10, 32)
-	if limitErr != nil || offsetErr != nil || limit < 1 || limit > 100 || offset < 0 {
-		return response.Error(c, 400, "limit must be between 1 and 100 and offset must be nonnegative", nil)
+	if f.Limit, f.Offset, err = page(c); err != nil {
+		return response.Error(c, 400, err.Error(), nil)
 	}
-	f.Limit, f.Offset = int32(limit), int32(offset)
 	records, err := h.repo.notificationRecords(c.Context(), s, f)
 	if err != nil {
 		slog.Error("notification records failed", "error", err)

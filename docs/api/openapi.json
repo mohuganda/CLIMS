@@ -337,7 +337,7 @@
         "tags": ["Orders"],
         "operationId": "transitionOrder",
         "summary": "Advance a warehouse order",
-        "description": "Applies to orders a DCFP placed with a warehouse (`POST /api/v1/orders/warehouse-requests`) and to warehouse requests linked to older alert orders. Warehouse staff with orders:process at the supplying store run review (queued or on_hold), check-stock (reviewed or on_hold: reserves the quantity and confirms, or holds the order until stock arrives) and dispatch (confirmed; optionally a smaller quantity_issued, releasing the rest). The district store then runs receive (orders:receive) with quantity_received; a mismatch needs discrepancy_note. orders:all_stores overrides store assignment. Generic pending orders and alert orders raised before stockouts became reports return 409. review, check-stock and dispatch accept an empty body.",
+        "description": "Applies to orders a DCFP placed with a warehouse (`POST /api/v1/orders/warehouse-requests`) and to warehouse requests linked to older alert orders. Warehouse staff with orders:process at the supplying store run review (queued or on_hold), check-stock (reviewed or on_hold: reserves the quantity and confirms, or holds the order until stock arrives) and dispatch (confirmed; optionally a smaller quantity_issued, releasing the rest). The district store then runs receive (orders:receive) with quantity_received; a mismatch needs discrepancy_note. orders:all_stores overrides store assignment. Generic pending orders and alert orders raised before stockouts became reports return 409. review, check-stock and dispatch accept an empty body. review may set quantity_approved (at most the requested quantity); check-stock reserves it and dispatch issues at most it. Each step's quantity is kept in the order's history.",
         "responses": {
           "200": {
             "description": "Success",
@@ -4061,6 +4061,255 @@
           }
         }
       }
+    },
+    "/api/v1/reports/warehouse-requests": {
+      "get": {
+        "tags": ["Reports"],
+        "operationId": "getWarehouseRequestReport",
+        "summary": "Warehouse request quantities and fulfilment",
+        "description": "District requests to national warehouses raised in the period: requested, approved, issued and district-acknowledged pieces, quantity fulfilment, full and partial receipts and response time, in total and by condom type, warehouse and district. Requires reports:read. orders:all_stores sees every store; other users see requests and stock of their assigned store only. Filters only narrow that.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "First Kampala day of the period, YYYY-MM-DD. Defaults to the first of the current month.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Last Kampala day of the period, included. Defaults to today.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "warehouse_store_id",
+            "in": "query",
+            "description": "One warehouse.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "district_id",
+            "in": "query",
+            "description": "One district.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "One condom type.",
+            "schema": {
+              "type": "string",
+              "enum": ["male", "female"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplyReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/reports/warehouse-requests/records": {
+      "get": {
+        "tags": ["Reports"],
+        "operationId": "listWarehouseRequestRecords",
+        "summary": "Warehouse requests behind the report totals",
+        "description": "The requests behind /reports/warehouse-requests for the same filters, newest first, in units and pieces. Requires reports:read. orders:all_stores sees every store; other users see requests and stock of their assigned store only. Filters only narrow that.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "First Kampala day of the period, YYYY-MM-DD. Defaults to the first of the current month.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Last Kampala day of the period, included. Defaults to today.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "warehouse_store_id",
+            "in": "query",
+            "description": "One warehouse.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "district_id",
+            "in": "query",
+            "description": "One district.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "One condom type.",
+            "schema": {
+              "type": "string",
+              "enum": ["male", "female"]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Page size.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Rows to skip.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestRecordListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/reports/stock": {
+      "get": {
+        "tags": ["Reports"],
+        "operationId": "getStockReport",
+        "summary": "Store stock and issue-based coverage",
+        "description": "Current stock at warehouses and district stores: physical, reserved, usable and in-transit quantities in units and pieces, whether the ledger reconciles, and months of stock from average outward issues over the last three complete months. Coverage is unavailable without a reconciled balance, full history or any issues. Requires reports:read. orders:all_stores sees every store; other users see requests and stock of their assigned store only. Filters only narrow that.",
+        "parameters": [
+          {
+            "name": "store_id",
+            "in": "query",
+            "description": "One store.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "store_type",
+            "in": "query",
+            "description": "Warehouses or district stores.",
+            "schema": {
+              "type": "string",
+              "enum": ["national", "district"]
+            }
+          },
+          {
+            "name": "district_id",
+            "in": "query",
+            "description": "One district.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "One condom type.",
+            "schema": {
+              "type": "string",
+              "enum": ["male", "female"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4120,6 +4369,12 @@
             "type": "string",
             "maxLength": 4000,
             "description": "receive only: required when quantity_received differs from quantity_issued."
+          },
+          "quantity_approved": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "review only: approve less than requested. Defaults to quantity_needed; check-stock reserves and dispatch issues against it."
           }
         },
         "additionalProperties": false
@@ -4361,6 +4616,12 @@
             "type": "string",
             "maxLength": 4000,
             "nullable": true
+          },
+          "quantity_approved": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1,
+            "description": "What the warehouse approved at review, at most quantity_needed, which keeps the original request."
           }
         }
       },
@@ -7308,6 +7569,423 @@
             "items": {
               "$ref": "#/components/schemas/NotificationRecord"
             }
+          }
+        }
+      },
+      "RequestTotals": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "requested_pieces": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Originally requested."
+          },
+          "approved_pieces": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "issued_pieces": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "acknowledged_pieces": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Counted by the district on receipt."
+          },
+          "quantity_fulfilment_rate": {
+            "type": "number",
+            "nullable": true,
+            "description": "Acknowledged pieces divided by originally requested pieces."
+          },
+          "fully_received": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Received quantity at least the requested quantity."
+          },
+          "partly_received": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pending": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Not yet received by the district."
+          },
+          "unconverted": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Quality issue: requests not in the product's catalogue unit, or for a product without pieces per unit, left out of the piece totals."
+          }
+        }
+      },
+      "RequestGroup": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "nullable": true
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/RequestTotals"
+          }
+        ]
+      },
+      "SupplyReport": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date"
+              },
+              "to": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          },
+          "data_updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total": {
+            "$ref": "#/components/schemas/RequestTotals"
+          },
+          "by_type": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestGroup"
+            },
+            "description": "By condom type; id and name are male or female."
+          },
+          "by_warehouse": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestGroup"
+            }
+          },
+          "by_district": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestGroup"
+            }
+          },
+          "response": {
+            "type": "object",
+            "properties": {
+              "median_hours": {
+                "type": "number",
+                "nullable": true,
+                "description": "Median time from request to district receipt, among received requests."
+              },
+              "fulfilled_included": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "pending": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "oldest_pending_hours": {
+                "type": "number",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "SupplyReportResponse": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SupplyReport"
+          }
+        }
+      },
+      "RequestRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "condom_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "unit_of_measure_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "order_status": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "warehouse_store_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "warehouse": {
+            "type": "string"
+          },
+          "district_store_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "district_store": {
+            "type": "string"
+          },
+          "district_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "district": {
+            "type": "string",
+            "nullable": true
+          },
+          "requested": {
+            "type": "integer",
+            "nullable": true
+          },
+          "approved": {
+            "type": "integer",
+            "nullable": true
+          },
+          "issued": {
+            "type": "integer",
+            "nullable": true
+          },
+          "received": {
+            "type": "integer",
+            "nullable": true
+          },
+          "requested_pieces": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "approved_pieces": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "issued_pieces": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "received_pieces": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "response_hours": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "RequestRecordListResponse": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestRecord"
+            }
+          }
+        }
+      },
+      "StockLine": {
+        "type": "object",
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "store": {
+            "type": "string"
+          },
+          "store_type": {
+            "type": "string",
+            "enum": ["national", "district"]
+          },
+          "district_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "district": {
+            "type": "string",
+            "nullable": true
+          },
+          "condom_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "unit_of_measure_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "physical": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reserved": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "usable": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Physical less reserved. Expired stock cannot be deducted until batches and expiry are tracked."
+          },
+          "in_transit": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Dispatched to this store and not yet received."
+          },
+          "physical_pieces": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "usable_pieces": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "in_transit_pieces": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "reconciled": {
+            "type": "boolean",
+            "description": "The inventory ledger adds up to the physical balance."
+          },
+          "average_monthly_issues": {
+            "type": "number",
+            "nullable": true
+          },
+          "months_of_stock": {
+            "type": "number",
+            "nullable": true,
+            "description": "Issue-based coverage: usable divided by average monthly outward issues. It does not measure consumption."
+          },
+          "coverage_status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "unavailable_unreconciled",
+              "unavailable_short_history",
+              "unavailable_no_issues"
+            ]
+          }
+        }
+      },
+      "StockReport": {
+        "type": "object",
+        "properties": {
+          "stock_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the balances were read, separate from any reporting period."
+          },
+          "coverage_window": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date"
+              },
+              "to": {
+                "type": "string",
+                "format": "date"
+              }
+            },
+            "description": "The last three complete Kampala months."
+          },
+          "coverage_method": {
+            "type": "string"
+          },
+          "expiry_tracked": {
+            "type": "boolean",
+            "description": "False until batches and expiry dates are recorded; expired and unknown-expiry stock are not separated yet."
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockLine"
+            }
+          }
+        }
+      },
+      "StockReportResponse": {
+        "type": "object",
+        "required": ["success", "data"],
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/StockReport"
           }
         }
       }
